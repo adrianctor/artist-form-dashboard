@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: afd-app
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8000:8000"
+    environment:
+      # Same MySQL/MariaDB instance as WordPress (XAMPP on Windows / Hostinger in prod)
+      DB_HOST: host.docker.internal
+      DB_PORT: "3306"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mailpit
+    restart: unless-stopped
+
+  vite:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.vite
+    container_name: afd-vite
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # Catches all local outbound email (password recovery, notifications)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: afd-mailpit
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP
+    restart: unless-stopped

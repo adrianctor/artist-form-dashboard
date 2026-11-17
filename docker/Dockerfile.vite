@@ -1,0 +1,23 @@
+# Vite dev image: Node 24 + PHP 8.4 CLI (wayfinder plugin shells out to `php artisan`)
+FROM node:24-bookworm-slim
+
+# PHP 8.4 to match the app container / composer platform_check
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+    && curl -sSLo /etc/apt/trusted.gpg.d/deb.sury.org-php.gpg \
+        https://packages.sury.org/php/apt.gpg \
+    && echo "deb https://packages.sury.org/php/ bookworm main" \
+        > /etc/apt/sources.list.d/php.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        php8.4-cli \
+        php8.4-xml \
+        php8.4-mbstring \
+        php8.4-curl \
+        php8.4-zip \
+        php8.4-mysql \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
