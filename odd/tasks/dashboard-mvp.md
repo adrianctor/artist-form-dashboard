@@ -179,3 +179,9 @@ Impacto: el sistema (Laravel) NO integra con la API de WordPress ni con plugins;
 - Songs pages (delegado): parcial→integrado por parent; typecheck roto por exports wayfinder + `register` huérfano, corregido por parent (AppSidebar default-imports, Login/Welcome sin register, Register.vue eliminado).
 - User management (delegado): parcial→completado por parent (is_active, roles en UI, toggle, auto-verify, guards).
 - Form patch (delegado): bloqueado por limits del worker → parent lo implementó con patch quirúrgico Python (6 parches, node --check OK).
+
+### L7 — Native review (RDD on)
+
+- Assess completo (empty-tree→HEAD, 341 files / 36k lines): `risk=high`, `review_due=true` → STATUS + START con lentes `risk,readability,reliability` → consent v3 relayed → usuario eligió **Review this change** (`granted`) → START falló con **`lens_context_budget_exceeded`** (candidato = todo el scaffold; terminal para ese candidato, sin authority creada).
+- Scope reducido (scaffold→HEAD, 3 feature commits, 69 files / 6,943 lines): `risk=medium`, **`review_due=false` (`under_budget`)** → no se requiere review en este corte; queda pending si un commit futuro alcanza el budget.
+- Evidencia de verificación propia (reemplaza al review en este corte): 65 tests, typecheck limpio, build OK, E2E curl API+UI+mailpit.
