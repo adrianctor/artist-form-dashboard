@@ -1,0 +1,2478 @@
+<style>
+.artist-profile-status{
+    margin:30px 0;
+}
+
+.artist-profile-status h4{
+    margin:0 0 10px;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:.5px;
+}
+
+.artist-profile-status .subtitle{
+    margin-bottom:25px;
+    font-size:14px;
+    color:#fff;
+    opacity:.9;
+}
+
+.artist-status-options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.artist-status-card{
+    position:relative;
+    cursor:pointer;
+}
+
+.artist-status-card input{
+    position:absolute;
+    opacity:0;
+}
+
+.artist-status-content{
+    height:100%;
+    padding:25px;
+    border-radius:12px;
+    background:#111;
+    border:1px solid rgba(255,255,255,.15);
+    transition:.2s; 
+}
+
+.artist-status-card input:checked + .artist-status-content{
+    border:2px solid #39d353;
+}
+
+.artist-status-icon{
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:15px;
+}
+
+.artist-status-card input:checked + .artist-status-content .artist-status-icon{
+    background:#39d353;
+    border-color:#39d353;
+}
+
+.artist-status-card input:checked + .artist-status-content .artist-status-icon:after{
+    content:"✓";
+    color:#fff;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.artist-status-title{
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:12px;
+}
+
+.artist-status-text{
+    font-size:13px;
+    line-height:1.6;
+    color:#d1d5db;
+}
+
+.artist-status-info{
+    margin-top:20px;
+    background:#0f172a;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;
+    padding:18px;
+    display:flex;
+    gap:15px;
+}
+
+.artist-status-info-icon{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:#2563eb;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    flex-shrink:0;
+}
+
+.artist-status-info-text{
+    font-size:13px;
+    line-height:1.6;
+    color:#dbeafe;
+}
+#musicReleaseForm *{
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+#musicReleaseForm{
+    max-width:950px;
+    margin:auto;
+    color:#fff;
+}
+
+#musicReleaseForm .card{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    backdrop-filter:blur(12px);
+    padding:35px;
+    border-radius:20px;
+}
+
+#musicReleaseForm h2{
+    margin:0 0 10px;
+    font-size:32px;
+}
+
+#musicReleaseForm h3{
+    margin-bottom:25px;
+}
+
+#musicReleaseForm p{
+    opacity:.7;
+}
+
+#musicReleaseForm .steps{
+    display:flex;
+    gap:8px;
+    margin:30px 0;
+}
+
+#musicReleaseForm .step-dot{
+    height:6px;
+    flex:1;
+    border-radius:20px;
+    background:rgba(255,255,255,.08);
+}
+
+#musicReleaseForm .step-dot.active{
+    background:#4f46e5;
+}
+
+#musicReleaseForm .step{
+    display:none;
+}
+
+#musicReleaseForm .step.active{
+    display:block;
+}
+
+#musicReleaseForm .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+#musicReleaseForm .group{
+    margin-bottom:20px;
+}
+
+#musicReleaseForm label{
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+#musicReleaseForm input,
+#musicReleaseForm textarea,
+#musicReleaseForm select{
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    color:#fff;
+    outline:none;
+}
+
+#musicReleaseForm textarea{
+    min-height:120px;
+}
+
+#musicReleaseForm input:focus,
+#musicReleaseForm textarea:focus,
+#musicReleaseForm select:focus{
+    border-color:#4f46e5;
+}
+
+#musicReleaseForm .radio-group{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+#musicReleaseForm .radio-card{
+    position:relative;
+}
+
+#musicReleaseForm .radio-card input{
+    position:absolute;
+    opacity:0;
+}
+
+#musicReleaseForm .radio-card span{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:120px;
+    padding:14px 20px;
+    border-radius:12px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.12);
+    cursor:pointer;
+    transition:.2s;
+}
+
+#musicReleaseForm .radio-card input:checked + span{
+    background:#4f46e5;
+    border-color:#4f46e5;
+}
+
+#musicReleaseForm .actions{
+    display:flex;
+    justify-content:space-between;
+    margin-top:40px;
+}
+
+#musicReleaseForm button{
+    border:none;
+    padding:14px 24px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+#musicReleaseForm .prev{
+    background:#444;
+    color:#fff;
+}
+
+#musicReleaseForm .next{
+    background:#4f46e5;
+    color:#fff;
+}
+
+#musicReleaseForm .submit{
+    background:#16a34a;
+    color:#fff;
+}
+
+#musicReleaseForm .success{
+    display:none;
+    text-align:center;
+    padding:50px 20px;
+}
+
+.artist-block{
+    margin-top:35px;
+    padding-top:35px;
+    border-top:1px solid rgba(255,255,255,.08);
+}
+
+@media(max-width:768px){
+
+    #musicReleaseForm .grid{
+        grid-template-columns:1fr;
+    }
+
+}
+#musicReleaseForm.locked {
+    pointer-events: none;
+    opacity: .5;
+}
+.required-star{
+    color:#ef4444;
+    margin-left:4px;
+    font-weight:bold;
+}
+</style>
+
+<div id="musicReleaseForm" class="locked">
+
+    <div class="card">
+
+        <h2>Music Release Form</h2>
+
+        <p>Complete all required information.</p>
+
+        <div class="steps" id="stepsBar"></div>
+
+        <form id="releaseForm">
+
+            <!-- ANTI SPAM -->
+
+            <input
+                type="checkbox"
+                name="botcheck"
+                style="display:none;"
+            >
+
+            <!-- STEP 0 -->
+
+            <div class="step active">
+
+                <h3>Release Info</h3>
+
+                <div class="grid">
+
+                   <div class="group" style="grid-column:1 / -1;">
+    <label>Song Code (unique identifier)</label>
+
+    <input
+        type="text"
+        name="song_code"
+        id="songCodeInput"
+        placeholder="Leave blank for a new song — paste a code (SONG-…) to update"
+    >
+
+    <small class="field-help">
+        If you received a code after a previous submission, paste it here
+        to prefill the form with that song's data (artists, links, etc.).
+    </small>
+</div>
+
+                   <div class="group">
+    <label>Track Title *</label>
+
+    <input
+        type="text"
+        name="track_title"
+        placeholder="Track Title"
+        required
+    >
+
+    <small class="field-help">
+        <strong>Example:</strong><br>
+        Aaron Sevilla, Badrops, Wrigley - Ya Zamani (Original Mix)
+            <br>
+
+        <strong>Format:</strong><br>
+        Artist 1, Artist 2, Artist 3 - Track Name (Version)
+    </small>
+</div>
+                    <div class="group" style="grid-column:1 / -1;">
+                    
+                        <label>
+                            Cover Artwork Creative Direction *
+                        </label>
+                    
+                        <textarea
+                            name="cover_artwork_creative_direction"
+                            placeholder="Please tell us which visual elements best represent this release. You may mention colours, textures, styles, atmospheres, emotions, concepts, or any ideas that help convey the identity and energy of the music.
+                    
+                    Our creative team will use this information as a guide to develop a visual concept that aligns with the artistic vision of the project."
+                            required
+                        ></textarea>
+                    
+                        <small style="
+                            display:block;
+                            margin-top:10px;
+                            line-height:1.6;
+                            opacity:.75;
+                        ">
+                            Please tell us which visual elements best represent this release. You may mention colours, textures, styles, atmospheres, emotions, concepts, or any ideas that help convey the identity and energy of the music.
+                            <br><br>
+                            Our creative team will use this information as a guide to develop a visual concept that aligns with the artistic vision of the project.
+                        </small>
+                    
+                    </div>
+                    <div class="group">
+                        <label>
+                            Audio master link (Google Drive or Dropbox) *
+                        </label>
+
+                        <input
+                            type="text"
+                            placeholder="Please provide a link to the extended version and master radio at 44100 - 16 bit WAV on Google Drive or Dropbox."
+                            name="audio_link"
+                            required
+                        >
+                    </div>
+
+                    <div class="group">
+                        <label>Genre *</label>
+
+                        <input
+                            type="text"
+                            placeholder="Please write the genre"
+                            name="genre"
+                            required
+                        >
+                    </div>
+
+                    <div class="group">
+                        <label>Country Of Recording *</label>
+
+                        <input
+                            type="text"
+                            placeholder="Please write the country of recording"
+                            name="country_recording"
+                            required
+                        >
+                    </div>
+
+                    <div class="group">
+
+                        <label>Audio Style *</label>
+
+                        <select
+                            name="audio_style"
+                            required
+                        >
+                            <option value="">Select</option>
+                            <option value="Vocal">Vocal</option>
+                            <option value="Instrumental">
+                                Instrumental
+                            </option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div class="group">
+
+                    <label>Writers *</label>
+
+                    <textarea
+                        name="writers"
+                        required
+                    ></textarea>
+
+                </div>
+
+                <div class="group">
+
+                    <label>Explicit Content *</label>
+
+                    <div class="radio-group">
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="explicit_content"
+                                value="Yes"
+                                required
+                            >
+
+                            <span>Yes</span>
+
+                        </label>
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="explicit_content"
+                                value="No"
+                                required
+                            >
+
+                            <span>No</span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- STEP 1 -->
+
+            <div class="step">
+
+                <h3>Cover Information</h3>
+
+                <div class="group">
+
+                    <label>
+                        Is this song a cover? *
+                    </label>
+
+                    <div class="radio-group">
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="is_cover"
+                                value="Yes"
+                                required
+                            >
+
+                            <span>Yes</span>
+
+                        </label>
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="is_cover"
+                                value="No"
+                                required
+                            >
+
+                            <span>No</span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="coverFields"
+                    style="display:none;"
+                >
+
+                    <div class="group">
+
+                        <label>
+                            Please link Spotify or YouTube original song *
+                        </label>
+
+                        <input
+                            type="url"
+                            name="original_song_link"
+                            id="originalSongLink"
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Write the credits or names of the authors or composers of the original track *
+                        </label>
+
+                        <textarea
+                            name="original_track_credits"
+                            id="originalTrackCredits"
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- STEP 2 -->
+
+            <div class="step">
+
+                <h3>Artists</h3>
+
+                <div class="group">
+
+                    <label>
+                        Number Of Artists *
+                    </label>
+
+                    <select
+                        id="artistCount"
+                        required
+                    >
+
+                        <option value="">Select</option>
+                        <option value="1">1 Artist</option>
+                        <option value="2">2 Artists</option>
+                        <option value="3">3 Artists</option>
+                        <option value="4">4 Artists</option>
+
+                    </select>
+
+                </div>
+
+                <div id="dynamicArtists"></div>
+
+            </div>
+
+            <div class="actions">
+
+                <button
+                    type="button"
+                    class="prev"
+                    id="prevBtn"
+                >
+                    Previous
+                </button>
+
+                <button
+                    type="button"
+                    class="next"
+                    id="nextBtn"
+                >
+                    Next
+                </button>
+
+            </div>
+
+        </form>
+
+        <div
+            class="success"
+            id="successBox"
+        >
+
+            <h2>
+                Submission Sent
+            </h2>
+
+            <p>
+                Your release has been submitted successfully.
+            </p>
+
+            <p id="successSongCode" style="
+                display:none;
+                margin-top:18px;
+                font-size:18px;
+            ">
+                Your Song Code:<br>
+                <strong id="successSongCodeValue"
+                    style="
+                        font-family:monospace;
+                        font-size:24px;
+                        letter-spacing:1px;
+                    "
+                ></strong>
+                <br><br>
+                <small>
+                    Save it — paste it in the Song Code field
+                    to update this release later.
+                </small>
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+
+/*
+============================================================
+ DASHBOARD API CONFIG — change these two values
+ - DASHBOARD_API_BASE:
+     local dev:  http://localhost:8000/api/v1
+     production: https://artist.sunsetgathering.com/administracion/api/v1
+ - DASHBOARD_API_TOKEN: Sanctum personal access token from
+     the dashboard admin (Settings or CLI).
+============================================================
+*/
+var DASHBOARD_API_BASE = 'http://localhost:8000/api/v1';
+var DASHBOARD_API_TOKEN = '';
+
+var currentStep = 0;
+
+var form = document.getElementById("releaseForm");
+
+var nextBtn = document.getElementById("nextBtn");
+
+var prevBtn = document.getElementById("prevBtn");
+
+var stepsBar = document.getElementById("stepsBar");
+
+var dynamicArtists =
+    document.getElementById("dynamicArtists");
+
+var artistCount =
+    document.getElementById("artistCount");
+
+var coverRadios =
+    document.querySelectorAll(
+        'input[name="is_cover"]'
+    );
+
+var coverFields =
+    document.getElementById("coverFields");
+
+var originalSongLink =
+    document.getElementById(
+        "originalSongLink"
+    );
+
+var originalTrackCredits =
+    document.getElementById(
+        "originalTrackCredits"
+    );
+
+/*
+COVER FIELDS
+*/
+
+coverRadios.forEach(function(radio){
+
+    radio.addEventListener(
+        "change",
+        function(){
+
+            /*
+            YES
+            */
+
+            if(this.value === "Yes"){
+
+                coverFields.style.display =
+                    "block";
+
+                originalSongLink.required =
+                    true;
+
+                originalTrackCredits.required =
+                    true;
+
+            }
+
+            /*
+            NO
+            */
+
+            else{
+
+                coverFields.style.display =
+                    "none";
+
+                originalSongLink.required =
+                    false;
+
+                originalTrackCredits.required =
+                    false;
+
+                /*
+                CLEAR VALUES
+                */
+
+                originalSongLink.value =
+                    "";
+
+                originalTrackCredits.value =
+                    "";
+
+            }
+
+        }
+
+    );
+
+});
+
+/*
+ARTIST BLOCKS
+*/
+
+artistCount.addEventListener(
+    "change",
+    function(){
+
+        var count =
+            parseInt(this.value);
+
+        if(count){
+
+            generateArtistBlocks(count);
+
+        }else{
+
+            dynamicArtists.innerHTML = "";
+
+        }
+
+    }
+);
+
+function getSteps(){
+
+    return document.querySelectorAll(
+        "#releaseForm > .step"
+    );
+
+}
+
+function renderIndicators(){
+
+    var steps = getSteps();
+
+    stepsBar.innerHTML = "";
+
+    for(
+        var i = 0;
+        i < steps.length;
+        i++
+    ){
+
+        var dot =
+            document.createElement("div");
+
+        dot.className = "step-dot";
+
+        if(i <= currentStep){
+
+            dot.classList.add("active");
+
+        }
+
+        stepsBar.appendChild(dot);
+
+    }
+
+}
+
+function showStep(index){
+
+    var steps = getSteps();
+
+    steps.forEach(function(step){
+
+        step.classList.remove("active");
+
+    });
+
+    steps[index].classList.add("active");
+
+    prevBtn.style.display =
+        index === 0
+        ? "none"
+        : "inline-block";
+
+    if(index === 2){
+
+        nextBtn.innerHTML =
+            "Send Form";
+
+        nextBtn.classList.add(
+            "submit"
+        );
+
+    }else{
+
+        nextBtn.innerHTML =
+            "Next";
+
+        nextBtn.classList.remove(
+            "submit"
+        );
+
+    }
+
+    renderIndicators();
+
+}
+
+function validateStep(stepIndex){
+
+    var steps = getSteps();
+
+    var current = steps[stepIndex];
+
+    var fields =
+        current.querySelectorAll(
+            "input[required], textarea[required], select[required]"
+        );
+
+    for(
+        var i = 0;
+        i < fields.length;
+        i++
+    ){
+
+        var field = fields[i];
+
+        if(field.type === "radio"){
+
+            var radios =
+                current.querySelectorAll(
+                    'input[name="'+field.name+'"]'
+                );
+
+            var checked = false;
+
+            radios.forEach(function(r){
+
+                if(r.checked){
+
+                    checked = true;
+
+                }
+
+            });
+
+            if(!checked){
+
+                alert(
+                    "Please complete all required fields."
+                );
+
+                return false;
+
+            }
+
+        }else{
+
+            if(
+                field.value.trim() === ""
+            ){
+
+                field.focus();
+
+                alert(
+                    "Please complete all required fields."
+                );
+
+                return false;
+
+            }
+
+        }
+
+    }
+
+    return true;
+
+}
+
+function generateArtistBlocks(count){
+
+    dynamicArtists.innerHTML = "";
+
+    for(
+        var i = 1;
+        i <= count;
+        i++
+    ){
+
+        dynamicArtists.innerHTML += `
+
+            <div class="artist-block">
+
+                <h3>
+                    Artist ${i} Info
+                </h3>
+
+                <div class="grid">
+
+                    <div class="group">
+
+                        <label>
+                            Artist Name *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="artist_name_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Real Name *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="real_name_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Email *
+                        </label>
+
+                        <input
+                            type="email"
+                            name="artist_email_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Role *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="artist_role_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Artist Country *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="artist_country_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Artist City *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="artist_city_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Artist Estate *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="artist_estate_${i}"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="group">
+
+                        <label>
+                            Provide a link to a photograph, Google Drive, or Dropbox *
+                        </label>
+
+                        <input
+                            type="url"
+                            name="artist_photo_${i}"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Artist Bio *
+                    </label>
+
+                    <textarea
+                        name="artist_bio_${i}"
+                        required
+                    ></textarea>
+
+                </div>
+                <div class="artist-profile-status">
+
+                    <h4>ARTIST PROFILE STATUS</h4>
+                
+                    <div class="subtitle">
+                        Have you previously released music on any digital platform under this artist name?
+                    </div>
+                
+                    <div class="artist-status-options">
+                
+                        <label class="artist-status-card">
+                
+                            <input
+                                type="radio"
+                                name="artist_status_${i}"
+                                value="New Artist"
+                                required
+                            >
+                
+                            <div class="artist-status-content">
+                
+                                <div class="artist-status-icon"></div>
+                
+                                <div class="artist-status-title">
+                                    No, this is a new artist profile
+                                </div>
+                
+                                <div class="artist-status-text">
+                
+                                    This artist does not currently have any official profiles on digital streaming platforms.
+                
+                                    <br><br>
+                
+                                    Profile links are optional and may be left blank.
+                
+                                    <br><br>
+                
+                                    New artist profiles will be automatically created by the platforms upon the release of their first publication.
+                
+                                </div>
+                
+                            </div>
+                
+                        </label>
+                
+                        <label class="artist-status-card">
+                
+                            <input
+                                type="radio"
+                                name="artist_status_${i}"
+                                value="Existing Artist"
+                                required
+                            >
+                
+                            <div class="artist-status-content">
+                
+                                <div class="artist-status-icon"></div>
+                
+                                <div class="artist-status-title">
+                                    Yes, this artist already has existing profiles on one or more digital platforms
+                                </div>
+                
+                                <div class="artist-status-text">
+                
+                                    This artist has previously released music under this artist name and already has active profiles on one or more digital platforms.
+                
+                                    <br><br>
+                
+                                    To ensure correct delivery and avoid duplicate artist pages, all existing artist profile links must be provided.
+                
+                                    <br><br>
+                
+                                    Failure to provide accurate profile links may result in releases being delivered to incorrect artist pages, creation of duplicate profiles, release delays, metadata corrections and additional processing time.
+                
+                                </div>
+                
+                            </div>
+                
+                        </label>
+                
+                    </div>
+                
+                    <div class="artist-status-info">
+                
+                        <div class="artist-status-info-icon">
+                            i
+                        </div>
+                
+                        <div class="artist-status-info-text">
+                
+                            By selecting "Existing Artist", you confirm that the artist name provided has been previously released commercially through a record label, distributor or self-release on one or more digital music platforms.
+                
+                            <br><br>
+                
+                            You acknowledge that providing the corresponding artist profile links is mandatory for accurate distribution and profile matching purposes.
+                
+                        </div>
+                
+                    </div>
+                
+                </div>
+                <h3>Links</h3>
+
+                <div class="grid">
+
+                    <div class="group">
+                        <label class="platform-label" data-field="spotify">
+    Spotify Artist Link
+</label>
+                        <input
+                            type="url"
+                            name="spotify_${i}"
+                            class="existing-required"
+                            data-platform="spotify"
+                            data-artist="${i}"
+                        >
+                    </div>
+
+                    <div class="group">
+                        <label class="platform-label" data-field="apple">
+    Apple Music Artist Link
+</label>
+                        <input
+    type="url"
+    name="apple_music_${i}"
+    class="existing-required"
+    data-platform="apple"
+    data-artist="${i}"
+>
+                    </div>
+                    <div class="group">
+                        <label class="platform-label" data-field="beatport">
+    Beatport Link
+</label>
+                        <input
+                            type="url"
+                            name="beatport_${i}"
+                            class="existing-required"
+                            data-platform="beatport"
+                            data-artist="${i}"
+                        >
+                    </div>
+                    <div class="group">
+                        <label>YouTube Channel Link</label>
+                        <input type="url" name="youtube_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>Instagram Profile Link</label>
+                        <input type="url" name="instagram_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>Facebook Profile Link</label>
+                        <input type="url" name="facebook_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>X Profile Link</label>
+                        <input type="url" name="x_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>TikTok Profile Link</label>
+                        <input type="url" name="tiktok_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>Soundcloud Profile Link</label>
+                        <input type="url" name="soundcloud_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>Songkick Link</label>
+                        <input type="url" name="songkick_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>Bandsintown Link</label>
+                        <input type="url" name="bandsintown_${i}">
+                    </div>
+
+                    <div class="group">
+                        <label>Website Link</label>
+                        <input type="url" name="website_${i}">
+                    </div>
+
+                    
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+    document
+.querySelectorAll(
+    'input[name^="artist_status_"]'
+)
+.forEach(function(radio){
+
+    radio.addEventListener(
+        "change",
+        function(){
+
+            var artistNumber =
+                this.name.replace(
+                    "artist_status_",
+                    ""
+                );
+
+            var spotify =
+                document.querySelector(
+                    '[name="spotify_' +
+                    artistNumber +
+                    '"]'
+                );
+
+            var apple =
+                document.querySelector(
+                    '[name="apple_music_' +
+                    artistNumber +
+                    '"]'
+                );
+
+            var beatport =
+                document.querySelector(
+                    '[name="beatport_' +
+                    artistNumber +
+                    '"]'
+                );
+
+            var spotifyLabel =
+                spotify
+                .closest(".group")
+                .querySelector("label");
+
+            var appleLabel =
+                apple
+                .closest(".group")
+                .querySelector("label");
+
+            var beatportLabel =
+                beatport
+                .closest(".group")
+                .querySelector("label");
+
+            function addStar(label){
+
+                if(
+                    !label.querySelector(
+                        ".required-star"
+                    )
+                ){
+
+                    label.insertAdjacentHTML(
+                        "beforeend",
+                        '<span class="required-star">*</span>'
+                    );
+
+                }
+
+            }
+
+            function removeStar(label){
+
+                var star =
+                    label.querySelector(
+                        ".required-star"
+                    );
+
+                if(star){
+
+                    star.remove();
+
+                }
+
+            }
+
+            if(
+                this.value ===
+                "Existing Artist"
+            ){
+
+                spotify.required = true;
+                apple.required = true;
+                beatport.required = true;
+
+                addStar(spotifyLabel);
+                addStar(appleLabel);
+                addStar(beatportLabel);
+
+            }else{
+
+                spotify.required = false;
+                apple.required = false;
+                beatport.required = false;
+
+                removeStar(spotifyLabel);
+                removeStar(appleLabel);
+                removeStar(beatportLabel);
+
+            }
+
+        }
+
+    );
+
+});
+}
+
+/*
+SUBMIT FORM
+*/
+emailjs.init(
+    "kKK4Y56GxNvJTtaLr"
+);
+
+/*
+SUBMIT FORM
+*/
+async function submitForm(){
+
+    /*
+    GET ARTIST EMAILS
+    */
+
+    var artistEmails = [];
+
+    var emailInputs =
+        document.querySelectorAll(
+            'input[name^="artist_email_"]'
+        );
+
+    emailInputs.forEach(function(input){
+
+        var email =
+            input.value.trim();
+
+        var validEmail =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if(
+            email !== "" &&
+            validEmail.test(email)
+        ){
+
+            artistEmails.push(email);
+
+        }
+
+    });
+
+    /*
+    BUILD ARTISTS TEXT
+    */
+
+    var artistsInfo = "";
+
+    var totalArtists =
+        parseInt(
+            artistCount.value || 0
+        );
+
+    for(
+        var i = 1;
+        i <= totalArtists;
+        i++
+    ){
+
+        artistsInfo +=
+
+            `ARTIST ${i}
+            
+            Artist Profile Status:
+            ${formDataValue("artist_status_"+i)}
+            
+            Name:
+            ${formDataValue("artist_name_"+i)}
+            
+            Real Name:
+            ${formDataValue("real_name_"+i)}
+            
+            Email:
+            ${formDataValue("artist_email_"+i)}
+            
+            Role:
+            ${formDataValue("artist_role_"+i)}
+            
+            Country:
+            ${formDataValue("artist_country_"+i)}
+            
+            City:
+            ${formDataValue("artist_city_"+i)}
+            
+            Estate:
+            ${formDataValue("artist_estate_"+i)}
+            
+            Photo:
+            ${formDataValue("artist_photo_"+i)}
+            
+            Bio:
+            ${formDataValue("artist_bio_"+i)}
+            
+            Spotify:
+            ${formDataValue("spotify_"+i)}
+            
+            Apple Music:
+            ${formDataValue("apple_music_"+i)}
+            
+            YouTube:
+            ${formDataValue("youtube_"+i)}
+            
+            Instagram:
+            ${formDataValue("instagram_"+i)}
+            
+            Facebook:
+            ${formDataValue("facebook_"+i)}
+            
+            X:
+            ${formDataValue("x_"+i)}
+            
+            TikTok:
+            ${formDataValue("tiktok_"+i)}
+            
+            Soundcloud:
+            ${formDataValue("soundcloud_"+i)}
+            
+            Songkick:
+            ${formDataValue("songkick_"+i)}
+            
+            Bandsintown:
+            ${formDataValue("bandsintown_"+i)}
+            
+            Website:
+            ${formDataValue("website_"+i)}
+            
+            Beatport:
+            ${formDataValue("beatport_"+i)}
+            
+            -----------------------------------
+            `;
+
+    }
+
+    /*
+    EMAIL PARAMS
+    */
+    var form = document.getElementById("releaseForm");
+    const fd = new FormData(form);
+    var params = {
+
+        to_email: "info@sunsetgathering.com",
+    
+        cc_email: artistEmails.join(","),
+    
+        reply_to: artistEmails[0] || "",
+    
+        track_title: formDataValue("track_title"),
+    cover_artwork_creative_direction:
+            formDataValue(
+                "cover_artwork_creative_direction"
+            ),
+        audio_link: formDataValue("audio_link"),
+    
+        genre: formDataValue("genre"),
+    
+        country_recording: formDataValue("country_recording"),
+    
+        audio_style: formDataValue("audio_style"),
+    
+        writers: formDataValue("writers"),
+    
+        explicit_content: fd.get("explicit_content"),
+    
+        is_cover: fd.get("is_cover"),
+    
+        original_song_link: formDataValue("original_song_link"),
+    
+        original_track_credits: formDataValue("original_track_credits"),
+    
+        artists_info: artistsInfo
+    
+    };
+
+    nextBtn.disabled = true;
+
+    nextBtn.innerHTML =
+        "Sending...";
+
+    /*
+    1) PERSIST TO DASHBOARD API (history must be saved first)
+    */
+    var dashboardSongCode = "";
+
+    try{
+
+        var apiPayload =
+            collectPayload();
+
+        var apiResponse =
+            await fetch(
+                DASHBOARD_API_BASE + "/songs",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                        "Accept":
+                            "application/json",
+                        "Authorization":
+                            "Bearer " +
+                            DASHBOARD_API_TOKEN
+                    },
+                    body: JSON.stringify(
+                        apiPayload
+                    )
+                }
+            );
+
+        if(!apiResponse.ok){
+
+            var apiError =
+                await apiResponse
+                    .json()
+                    .catch(
+                        function(){
+                            return {};
+                        }
+                    );
+
+            var apiMessage =
+                apiError.message ||
+                "Dashboard save failed.";
+
+            if(
+                apiError.errors &&
+                apiError.errors.song_code
+            ){
+
+                apiMessage =
+                    apiError.errors
+                        .song_code[0];
+
+            }
+
+            if(apiResponse.status === 401){
+
+                apiMessage =
+                    "Dashboard token missing or invalid. " +
+                    "Set DASHBOARD_API_TOKEN in the form.";
+
+            }
+
+            alert(apiMessage);
+
+            nextBtn.disabled = false;
+
+            nextBtn.innerHTML =
+                "Send Form";
+
+            return;
+
+        }
+
+        var apiResult =
+            await apiResponse.json();
+
+        dashboardSongCode =
+            apiResult.song_code;
+
+    }catch(apiError){
+
+        console.log(apiError);
+
+        alert(
+            "Could not reach the dashboard API. " +
+            "Check your connection and DASHBOARD_API_BASE. " +
+            "The form was NOT submitted."
+        );
+
+        nextBtn.disabled = false;
+
+        nextBtn.innerHTML =
+            "Send Form";
+
+        return;
+
+    }
+
+    /*
+    2) EMAILJS (existing flow, unchanged service/template)
+    */
+    var emailFailed = false;
+
+    try{
+
+        await emailjs.send(
+
+            "service_dduov6c",
+
+            "template_s56ahoo",
+
+            params
+
+        );
+
+    }catch(error){
+
+        console.log(error);
+
+        emailFailed = true;
+
+    }
+
+    /*
+    3) SUCCESS — dashboard already has the data
+    */
+    form.style.display =
+        "none";
+
+    var codeEl =
+        document.getElementById(
+            "successSongCode"
+        );
+
+    var codeValEl =
+        document.getElementById(
+            "successSongCodeValue"
+        );
+
+    if(
+        codeEl &&
+        codeValEl &&
+        dashboardSongCode
+    ){
+
+        codeValEl.textContent =
+            dashboardSongCode;
+
+        codeEl.style.display =
+            "block";
+
+    }
+
+    document.getElementById(
+        "successBox"
+    ).style.display =
+        "block";
+
+    if(emailFailed){
+
+        alert(
+            "Saved to dashboard (Song Code: " +
+            dashboardSongCode +
+            ") but the email could not be sent."
+        );
+
+    }
+
+    nextBtn.disabled = false;
+
+    nextBtn.innerHTML =
+        "Send Form";
+
+}
+
+/*
+COLLECT PAYLOAD FOR DASHBOARD API
+Maps form fields (incl. dynamic artists) to the API schema.
+*/
+function collectPayload(){
+
+    var payload = {
+        song_code:
+            (formDataValue("song_code") || "")
+                .trim()
+                .toUpperCase(),
+        track_title:
+            formDataValue("track_title"),
+        cover_artwork_creative_direction:
+            formDataValue(
+                "cover_artwork_creative_direction"
+            ),
+        audio_link:
+            formDataValue("audio_link"),
+        genre:
+            formDataValue("genre"),
+        country_recording:
+            formDataValue("country_recording"),
+        audio_style:
+            formDataValue("audio_style"),
+        writers:
+            formDataValue("writers"),
+        explicit_content:
+            formDataValue("explicit_content"),
+        is_cover:
+            formDataValue("is_cover"),
+        original_song_link:
+            formDataValue("original_song_link"),
+        original_track_credits:
+            formDataValue("original_track_credits"),
+        artist_count:
+            parseInt(artistCount.value || 0)
+    };
+
+    var artists = [];
+
+    var totalArtists =
+        parseInt(artistCount.value || 0);
+
+    for(
+        var i = 1;
+        i <= totalArtists;
+        i++
+    ){
+
+        artists.push({
+            name:
+                formDataValue("artist_name_"+i),
+            real_name:
+                formDataValue("real_name_"+i),
+            email:
+                formDataValue("artist_email_"+i),
+            role:
+                formDataValue("artist_role_"+i),
+            country:
+                formDataValue("artist_country_"+i),
+            city:
+                formDataValue("artist_city_"+i),
+            estate:
+                formDataValue("artist_estate_"+i),
+            photo:
+                formDataValue("artist_photo_"+i),
+            bio:
+                formDataValue("artist_bio_"+i),
+            status:
+                formDataValue("artist_status_"+i),
+            links: {
+                spotify:
+                    formDataValue("spotify_"+i),
+                apple_music:
+                    formDataValue("apple_music_"+i),
+                beatport:
+                    formDataValue("beatport_"+i),
+                youtube:
+                    formDataValue("youtube_"+i),
+                instagram:
+                    formDataValue("instagram_"+i),
+                facebook:
+                    formDataValue("facebook_"+i),
+                x:
+                    formDataValue("x_"+i),
+                tiktok:
+                    formDataValue("tiktok_"+i),
+                soundcloud:
+                    formDataValue("soundcloud_"+i),
+                songkick:
+                    formDataValue("songkick_"+i),
+                bandsintown:
+                    formDataValue("bandsintown_"+i),
+                website:
+                    formDataValue("website_"+i)
+            }
+        });
+
+    }
+
+    payload.artists = artists;
+
+    return payload;
+
+}
+
+/*
+PREFILL FORM FROM DASHBOARD API
+*/
+function setRadioValue(name, value){
+
+    if(!value){
+        return;
+    }
+
+    var radios =
+        document.querySelectorAll(
+            'input[name="'+name+'"]'
+        );
+
+    radios.forEach(function(radio){
+
+        if(radio.value === value){
+
+            radio.checked = true;
+
+            radio.dispatchEvent(
+                new Event(
+                    "change",
+                    { bubbles: true }
+                )
+            );
+
+        }
+
+    });
+
+}
+
+function setFieldValue(name, value){
+
+    var el =
+        document.querySelector(
+            '[name="'+name+'"]'
+        );
+
+    if(!el){
+        return;
+    }
+
+    el.value =
+        value == null ? "" : value;
+
+}
+
+async function prefillFromApi(songCode){
+
+    songCode =
+        (songCode || "")
+            .trim()
+            .toUpperCase();
+
+    if(!songCode){
+        return;
+    }
+
+    try{
+
+        var res =
+            await fetch(
+                DASHBOARD_API_BASE +
+                    "/songs/" +
+                    encodeURIComponent(songCode),
+                {
+                    headers: {
+                        "Accept":
+                            "application/json",
+                        "Authorization":
+                            "Bearer " +
+                            DASHBOARD_API_TOKEN
+                    }
+                }
+            );
+
+        if(res.status === 404){
+
+            alert(
+                "No song found for code " +
+                songCode +
+                "."
+            );
+
+            return;
+
+        }
+
+        if(res.status === 401){
+
+            alert(
+                "Dashboard token missing or invalid. " +
+                "Set DASHBOARD_API_TOKEN in the form."
+            );
+
+            return;
+
+        }
+
+        if(!res.ok){
+            return;
+        }
+
+        var data =
+            await res.json();
+
+        var p =
+            data.payload || {};
+
+        /*
+        SIMPLE FIELDS
+        */
+        setFieldValue(
+            "track_title",
+            p.track_title
+        );
+        setFieldValue(
+            "cover_artwork_creative_direction",
+            p.cover_artwork_creative_direction
+        );
+        setFieldValue(
+            "audio_link",
+            p.audio_link
+        );
+        setFieldValue("genre", p.genre);
+        setFieldValue(
+            "country_recording",
+            p.country_recording
+        );
+        setFieldValue(
+            "audio_style",
+            p.audio_style
+        );
+        setFieldValue("writers", p.writers);
+        setFieldValue(
+            "original_song_link",
+            p.original_song_link
+        );
+        setFieldValue(
+            "original_track_credits",
+            p.original_track_credits
+        );
+
+        /*
+        RADIOS (dispatch change so conditional UI reacts)
+        */
+        setRadioValue(
+            "explicit_content",
+            p.explicit_content
+        );
+        setRadioValue(
+            "is_cover",
+            p.is_cover
+        );
+
+        /*
+        ARTISTS — regenerate blocks first, then fill
+        */
+        var count =
+            p.artist_count ||
+            (p.artists || []).length ||
+            0;
+
+        if(count){
+
+            artistCount.value =
+                String(count);
+
+            artistCount.dispatchEvent(
+                new Event(
+                    "change",
+                    { bubbles: true }
+                )
+            );
+
+            (p.artists || []).forEach(
+                function(artist, idx){
+
+                    var n = idx + 1;
+
+                    setFieldValue(
+                        "artist_name_"+n,
+                        artist.name
+                    );
+                    setFieldValue(
+                        "real_name_"+n,
+                        artist.real_name
+                    );
+                    setFieldValue(
+                        "artist_email_"+n,
+                        artist.email
+                    );
+                    setFieldValue(
+                        "artist_role_"+n,
+                        artist.role
+                    );
+                    setFieldValue(
+                        "artist_country_"+n,
+                        artist.country
+                    );
+                    setFieldValue(
+                        "artist_city_"+n,
+                        artist.city
+                    );
+                    setFieldValue(
+                        "artist_estate_"+n,
+                        artist.estate
+                    );
+                    setFieldValue(
+                        "artist_photo_"+n,
+                        artist.photo
+                    );
+                    setFieldValue(
+                        "artist_bio_"+n,
+                        artist.bio
+                    );
+
+                    setRadioValue(
+                        "artist_status_"+n,
+                        artist.status
+                    );
+
+                    var links =
+                        artist.links || {};
+
+                    Object.keys(links)
+                        .forEach(
+                            function(platform){
+
+                                setFieldValue(
+                                    platform+"_"+n,
+                                    links[platform]
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
+
+        if(
+            typeof Swal !== "undefined"
+        ){
+
+            Swal.fire({
+                icon: "success",
+                title:
+                    "Loaded " + songCode,
+                text:
+                    "Form prefilled with the latest submission.",
+                timer: 1800,
+                showConfirmButton: false
+            });
+
+        }else{
+
+            alert(
+                "Loaded data for " +
+                songCode +
+                "."
+            );
+
+        }
+
+    }catch(err){
+
+        console.log(err);
+
+        alert(
+            "Could not reach the dashboard API to prefill."
+        );
+
+    }
+
+}
+
+/*
+URL PARAM + BLUR PREFILL
+*/
+(function initSongCodePrefill(){
+
+    var params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    var urlCode =
+        params.get("song_code");
+
+    if(urlCode){
+
+        var input =
+            document.getElementById(
+                "songCodeInput"
+            );
+
+        if(input){
+
+            input.value =
+                urlCode;
+
+        }
+
+        prefillFromApi(urlCode);
+
+    }
+
+    var codeInput =
+        document.getElementById(
+            "songCodeInput"
+        );
+
+    if(codeInput){
+
+        var lastFetched = "";
+
+        codeInput.addEventListener(
+            "blur",
+            function(){
+
+                var value =
+                    (this.value || "")
+                        .trim()
+                        .toUpperCase();
+
+                this.value = value;
+
+                if(
+                    value &&
+                    value !== lastFetched
+                ){
+
+                    lastFetched = value;
+
+                    prefillFromApi(value);
+
+                }
+
+            }
+        );
+
+    }
+
+})();
+
+/*
+HELPER
+*/
+
+function formDataValue(name){
+
+    var radios = document.querySelectorAll(
+        '[name="' + name + '"]'
+    );
+
+    if(radios.length > 1){
+
+        for(var i = 0; i < radios.length; i++){
+
+            if(radios[i].checked){
+
+                return radios[i].value;
+
+            }
+
+        }
+
+        return "";
+
+    }
+
+    var el = document.querySelector(
+        '[name="' + name + '"]'
+    );
+
+    if(!el){
+        return "";
+    }
+
+    return el.value || "";
+
+}
+
+/*
+NEXT BUTTON
+*/
+
+nextBtn.addEventListener(
+    "click",
+    async function(){
+
+        /*
+        STEP 0
+        */
+
+        if(currentStep === 0){
+
+            if(!validateStep(0)){
+                return;
+            }
+
+            currentStep++;
+
+            showStep(currentStep);
+
+            return;
+
+        }
+
+        /*
+        STEP 1
+        */
+
+        if(currentStep === 1){
+
+            if(!validateStep(1)){
+                return;
+            }
+
+            currentStep++;
+
+            showStep(currentStep);
+
+            return;
+
+        }
+
+        /*
+        STEP 2
+        */
+
+        if(currentStep === 2){
+
+            if(!validateStep(2)){
+                return;
+            }
+
+            await submitForm();
+
+        }
+
+    }
+);
+
+/*
+PREVIOUS BUTTON
+*/
+
+prevBtn.addEventListener(
+    "click",
+    function(){
+
+        if(currentStep > 0){
+
+            currentStep--;
+
+            showStep(currentStep);
+
+        }
+
+    }
+);
+let isLoaded=false;
+if(!isLoaded){
+    showStep(0);
+    Swal.fire({
+        title: 'Important Information',
+        width: 900,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        confirmButtonText: 'I Have Read and Accept',
+        confirmButtonColor: '#4f46e5',
+        html: `
+        <div style="
+            text-align:left;
+            max-height:500px;
+            overflow-y:auto;
+            line-height:1.6;
+            padding-right:10px;
+        ">
+    <style>
+    .swal2-html-container ul,
+    .swal2-html-container li,
+    .swal2-html-container p,
+    .swal2-html-container strong{
+        color:#545454 !important;
+    }
+    </style>
+            <p>Thank you for taking the time to complete this form.</p>
+    
+            <p>
+                The information provided will be used directly for the creation,
+                distribution and official release of your music across digital platforms,
+                online music stores and streaming services worldwide. For this reason,
+                we kindly ask that you carefully review all information before submitting
+                this form.
+            </p>
+    
+            <p><strong>Please pay particular attention to the following:</strong></p>
+    
+            <ul>
+                <li>Release title (Single, EP or Album).</li>
+                <li>Track title(s).</li>
+                <li>Artist name(s), including all primary and featured artists.</li>
+                <li>Songwriting, production and participation credits.</li>
+                <li>Correct use of capital letters, lower-case letters, accents, punctuation marks, symbols and special characters.</li>
+            </ul>
+    
+            <p>
+                It is essential that all information is entered exactly as you wish it
+                to appear publicly on digital platforms. The details provided in this
+                form will be treated as the official reference for the delivery and
+                publication of your release.
+            </p>
+    
+            <p>
+                If you already have existing artist profiles on digital platforms,
+                you must provide the relevant profile links where requested within
+                this form. This may include, but is not limited to:
+            </p>
+    
+            <ul>
+                <li>Spotify</li>
+                <li>Apple Music</li>
+                <li>Beatport</li>
+                <li>Traxsource</li>
+                <li>SoundCloud</li>
+                <li>YouTube Artist Channel</li>
+                <li>Any other platform where your artist profile is currently active</li>
+            </ul>
+    
+            <p>
+                Providing these links is extremely important to ensure your release
+                is delivered to the correct artist profiles and to avoid the creation
+                of duplicate pages or artist profile mismatches.
+            </p>
+    
+            <p>
+                If you are a new artist and do not yet have official profiles on the
+                platforms listed above, these links will not be required. In such
+                cases, the platforms will automatically generate your artist profiles
+                upon the release of their first publication.
+            </p>
+    
+            <p>
+                This process generally occurs only once and allows future releases to
+                be correctly linked to your newly established artist pages.
+            </p>
+    
+            <p>
+                By submitting this form, you confirm that all information provided
+                has been carefully reviewed, verified and approved by you for
+                distribution and publication purposes.
+            </p>
+    
+            <p>
+                Please note that any discrepancies, typographical errors, omissions
+                or inaccurate information resulting from the completion of this form
+                will be deemed to originate from the information supplied by the
+                applicant.
+            </p>
+    
+            <p>
+                Whilst corrections may be possible in certain circumstances,
+                amendments are subject to the policies, approval processes and
+                update schedules of individual digital platforms and music stores.
+            </p>
+    
+            <p>
+                As a result, corrections may take several weeks to be processed and
+                reflected across all services. Such amendments may also affect release
+                schedules, marketing plans, promotional campaigns, platform visibility
+                and, in some cases, the intended release date itself.
+            </p>
+    
+            <p>
+                To ensure a smooth distribution process and avoid unnecessary delays,
+                we kindly encourage you to review all information carefully before
+                proceeding.
+            </p>
+    
+            <p>
+                <strong>
+                    By continuing with this form, you acknowledge and accept the terms
+                    outlined above.
+                </strong>
+            </p>
+    
+        </div>
+        `
+    }).then((result) => {
+    
+        if(result.isConfirmed){
+    
+            document
+                .getElementById('musicReleaseForm')
+                .classList
+                .remove('locked');
+    
+        }
+    
+    });
+    
+}
+</script>
