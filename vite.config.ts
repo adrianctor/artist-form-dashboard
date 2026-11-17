@@ -32,6 +32,18 @@ export default defineConfig({
         }),
     ]),
     server: {
+        // Advertise assets as localhost:5173 (0.0.0.0 is not a valid
+        // browser destination). The dashboard page lives on :8000 and
+        // loads these assets cross-origin, so the CORS allow-list MUST
+        // include :8000 — laravel-vite-plugin falls back to `origin`
+        // for CORS, which would otherwise echo only :5173 and break.
+        origin: 'http://localhost:5173',
+        cors: {
+            origin: ['http://localhost:8000', 'http://localhost:5173'],
+        },
+        hmr: {
+            host: 'localhost',
+        },
         watch: {
             ignored: [
                 '**/.agents/**',

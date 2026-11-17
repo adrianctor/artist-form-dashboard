@@ -185,3 +185,13 @@ Impacto: el sistema (Laravel) NO integra con la API de WordPress ni con plugins;
 - Assess completo (empty-tree→HEAD, 341 files / 36k lines): `risk=high`, `review_due=true` → STATUS + START con lentes `risk,readability,reliability` → consent v3 relayed → usuario eligió **Review this change** (`granted`) → START falló con **`lens_context_budget_exceeded`** (candidato = todo el scaffold; terminal para ese candidato, sin authority creada).
 - Scope reducido (scaffold→HEAD, 3 feature commits, 69 files / 6,943 lines): `risk=medium`, **`review_due=false` (`under_budget`)** → no se requiere review en este corte; queda pending si un commit futuro alcanza el budget.
 - Evidencia de verificación propia (reemplaza al review en este corte): 65 tests, typecheck limpio, build OK, E2E curl API+UI+mailpit.
+
+### L8 — Fixes post-primer-arranque (2026-11-17)
+
+- **Vite assets CORS**: `server.origin` solo (5173) hacía que laravel-vite-plugin emitiera `Access-Control-Allow-Origin: http://localhost:5173` para la página de :8000 → `ERR_FAILED`. Fix: `server.cors.origin = ['http://localhost:8000','http://localhost:5173']` en `vite.config.ts`.
+- **Hot file**: `--host 0.0.0.0` escribía `http://0.0.0.0:5173` en `public/hot` (inválido en navegador). Fix: `server.origin` + `hmr.host: 'localhost'`.
+- **WordPress**: instalado en `C:\xampp\htdocs\wordpress\` (subcarpeta, NO en la raíz — el `index.php` raíz se restauró como redirect a `/dashboard/`). WP-CLI en `C:\xampp\wp-cli.phar`, PHP 8.3 de XAMPP. BD: base `wordpress`, usuario `dashboard`. `siteurl/home = http://localhost/wordpress`.
+- **Elementor 4.4.1** instalado y activo.
+- **Página del form**: `/wordpress/music-release-form/` (page ID 6) con el HTML parcheado (kses removido al crear, scripts intactos). `.htaccess` de WP escrito a mano (wp-cli no lo hacía por rutas UNC).
+- **CORS API**: `HandleCors` default de Laravel responde `Access-Control-Allow-Origin: *` para `api/*` — el form en :80 puede llamar a :8000 (preflight 204 OK, verificado).
+- Credenciales WP: `admin` / `dashboard123` (misma que el dashboard).
