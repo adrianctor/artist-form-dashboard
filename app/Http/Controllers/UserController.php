@@ -62,8 +62,11 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        // Admin-created accounts skip email verification (S1: no public signup).
-        $user = User::create($validated + ['email_verified_at' => now()]);
+        // Admin-created accounts skip email verification (S1: no public
+        // signup). email_verified_at is not mass-assignable (Fillable) —
+        // set it explicitly or these users bounce to /email/verify too.
+        $user = User::create($validated);
+        $user->forceFill(['email_verified_at' => now()])->save();
         $user->assignRole('user');
 
         return redirect()->route('users.index')->with('success', 'User created.');

@@ -87,6 +87,52 @@ class SocialLoginTest extends TestCase
         $this->assertAuthenticatedAs($user);
 
         $response->assertRedirect(route('dashboard', absolute: false));
+
+        // The OAuth provider vouches for the email: the account must be
+        // created verified, otherwise the verified middleware bounces the
+        // fresh social signup straight to /email/verify (bug reported by
+        // the user: "cuando me registro por google no caigo al dashboard").
+        $this->assertNotNull(
+            $user->fresh()->email_verified_at,
+            'Social signups must not require email verification.'
+        );
+
+        // Following the redirect must land on the dashboard, NOT on
+        // the email verification notice.
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
+    }
+
+    public function test_social_login_verifies_a_previously_unverified_account(): void
+    {
+        config([
+            'services.google.client_id' => 'test-client-id',
+            'services.google.client_secret' => 'test-client-secret',
+        ]);
+
+        // Account created earlier via the password register flow (unverified).
+        $existing = User::factory()->create([
+            'email' => 'was.unverified@example.com',
+            'email_verified_at' => null,
+        ]);
+        $existing->assignRole('user');
+
+        $socialiteUser = new SocialiteUser();
+        $socialiteUser->map(['email' => 'was.unverified@example.com', 'name' => 'Was Unverified']);
+
+        Socialite::shouldReceive('driver')->with('google')->once()->andReturn($provider = \Mockery::mock());
+        $provider->shouldReceive('user')->once()->andReturn($socialiteUser);
+
+        $this->get('/auth/google/callback?provider=google')
+            ->assertRedirect(route('dashboard', absolute: false));
+
+        // Google proved email ownership — pending verification is cleared.
+        $this->assertNotNull($existing->fresh()->email_verified_at);
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
     }
 
     public function test_registered_social_user_is_logged_in_without_duplicate(): void

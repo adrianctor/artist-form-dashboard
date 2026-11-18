@@ -80,7 +80,6 @@ class SocialAuthController extends Controller
                 'name' => $socialUser->getName() ?: Str::before($email, '@'),
                 'email' => $email,
                 'password' => Str::random(40),
-                'email_verified_at' => now(),
                 'is_active' => true,
             ]);
             $user->assignRole('user');
@@ -89,6 +88,15 @@ class SocialAuthController extends Controller
         if (! $user->is_active) {
             return redirect()->route('login')
                 ->withErrors(['social' => 'This account has been deactivated.']);
+        }
+
+        // The OAuth provider vouches for this email address: social logins
+        // must never bounce to /email/verify — not for fresh signups (the
+        // email_verified_at mass-assignment used to be silently dropped by
+        // the Fillable attribute) and not for accounts still pending
+        // verification from an earlier password signup.
+        if (! $user->hasVerifiedEmail()) {
+            $user->forceFill(['email_verified_at' => now()])->save();
         }
 
         Auth::login($user, remember: true);

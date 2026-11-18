@@ -68,7 +68,7 @@ const socialError = computed(
                     v-focus
                     :tabindex="1"
                     autocomplete="username"
-                    placeholder="admin or you@example.com"
+                    placeholder="you@example.com"
                 />
                 <InputError :message="errors.email" />
             </div>

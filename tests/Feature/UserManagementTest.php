@@ -81,6 +81,11 @@ class UserManagementTest extends TestCase
 
         $this->assertSame('New User', $user->name);
         $this->assertTrue($user->hasRole('user'));
+
+        // Admin-created accounts skip email verification (S1) — the
+        // email_verified_at attribute used to be silently dropped by
+        // mass assignment, bouncing these users to /email/verify.
+        $this->assertNotNull($user->email_verified_at);
     }
 
     public function test_admin_can_update_a_user(): void

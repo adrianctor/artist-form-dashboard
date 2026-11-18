@@ -223,3 +223,18 @@ Pedidos del usuario, todos verificados con tests + E2E:
 6. **Ownership de canciones** (spec L5 "los users se deben filtrar..."): migración `songs.user_id` + atribución en el POST de la API matcheando los `artists[].email` del form contra users (fallback backfill en append). `Song::scopeVisibleTo`: admin ve todo, user solo las suyas; `show()` ajeno → 404. Tests: `SongOwnershipTest` (6 casos) + `SongsPageTest` actualizado. E2E: user solo ve `SONG-REG0001`; admin ve las tres.
 
 Verificación: **84 tests / 386 assertions**, `vue-tsc` limpio, `npm run build` OK.
+
+### L11 — Fix: Google login caía en email verification + recupero post-reboot (2026-11-18)
+
+1. **Bug (pregunta del usuario)**: registrarse con Google llevaba a `/email/verify` en vez del dashboard.
+   **Causa raíz**: `email_verified_at` NO está en el `#[Fillable]` del modelo User → `User::create([... email_verified_at => now()])` lo descartaba silenciosamente (mass assignment) → el middleware `verified` de `/dashboard` rebotaba a la pantalla de verificación. Lo mismo afectaba a los usuarios creados por el admin.
+   **Fix**: `SocialAuthController` y `UserController::store` ahora usan `forceFill(['email_verified_at' => now()])->save()` — el proveedor OAuth (o el admin) avala el email, así que:
+   - login social → siempre entra directo al dashboard (usuarios nuevos Y existentes pendientes de verificación);
+   - usuarios creados por el admin → verificados;
+   - registro con contraseña → sigue requiriendo verificación (nadie avala el email en ese flujo).
+   Tests: `SocialLoginTest` (2 nuevos: signup social verificado + follow-through a /dashboard sin bounce; cuenta pendiente verificada al entrar con Google), `UserManagementTest` (admin-created verified), `RegistrationTest` (pin: registro por contraseña queda `NULL`).
+2. **Producción en Hostinger (pregunta del usuario)**: la verificación de email por contraseña se envía con el SMTP de Hostinger — sin VPS, sin cron, sin cola (Laravel envía síncrono; verificado: `VerifyEmail` no implementa `ShouldQueue`). Documentado en `DEPLOY.md`: crear buzón en hPanel → `MAIL_HOST=smtp.hostinger.com`, puerto 465 SSL (587 TLS si falla), username = buzón completo (NO la contraseña de hPanel), `APP_URL=https://artist.sunsetgathering.com/administracion`.
+3. **Recupero tras reiniciar la máquina**:
+   - XAMPP (Apache+MySQL) no arranca solo → `C:\xampp\xampp_start.exe`.
+   - **Conflicto de puerto 80**: el Traefik del stack CONTAPP (`bootstrap-traefik-1`) publica `0.0.0.0:80->80` y le robaba el :80 a XAMPP → `localhost/wordpress` devolvía 404 de Apache Unix. Detenido con `docker stop bootstrap-traefik-1` (revivable con `docker start`; solo afecta al stack CONTAPP de otro proyecto, no a este dashboard).
+   - Verificación E2E post-reboot: WP home/login/form 200, WP admin login 302→200, dashboard root→302 login, API 200, `/auth/google` → 302 accounts.google.com, Mailpit 200, **85 tests / 410 assertions**.

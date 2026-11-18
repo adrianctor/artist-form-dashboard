@@ -46,6 +46,11 @@ class RegistrationTest extends TestCase
         $this->assertTrue($user->hasRole('user'));
         $this->assertFalse($user->hasRole('admin'));
 
+        // Password self-registration keeps email verification (it is the
+        // only flow where nobody vouches for the address); the verification
+        // email goes to Mailpit locally / Hostinger SMTP in production.
+        $this->assertNull($user->email_verified_at);
+
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 

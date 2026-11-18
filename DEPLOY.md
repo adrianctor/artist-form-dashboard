@@ -49,13 +49,27 @@ DB_USERNAME=<usuario_bd_wordpress>
 DB_PASSWORD=<password_bd_wordpress>
 DB_PREFIX=dash_              # CRÍTICO: no chocar con wp_*
 
-MAIL_MAILER=smtp             # el SMTP de Hostinger (hPanel → Emails)
-MAIL_HOST=...
-MAIL_PORT=...
-MAIL_USERNAME=...
-MAIL_PASSWORD=...
-MAIL_ENCRYPTION=tls
+# Email (verificación de cuenta + recuperación de contraseña)
+# Local: MAIL_MAILER=smtp + MAIL_HOST=mailpit (ya configurado, no tocar).
+# Producción: SMTP de Hostinger — NO necesita VPS, ni cron, ni cola:
+# Laravel envía estos correos de forma síncrona en el mismo request.
+#
+# Pasos en hPanel (una sola vez):
+#   1. hPanel → Emails → Email Accounts → crear un buzón, p.ej.
+#      no-reply@sunsetgathering.com (o la que prefieras de tu dominio).
+#   2. Copiar las credenciales del buzón (NO la contraseña de hPanel).
+#   3. Rellenar abajo.
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.hostinger.com   # Hostinger Email; si tu buzón es Titan → smtp.titan.email
+MAIL_PORT=465                  # SSL. Si falla el handshake → 587 con MAIL_ENCRYPTION=tls
+MAIL_USERNAME=no-reply@sunsetgathering.com   # el buzón completo, no el usuario de hPanel
+MAIL_PASSWORD=                 # contraseña del buzón creado en el paso 1
+MAIL_ENCRYPTION=ssl
 MAIL_FROM_ADDRESS=no-reply@sunsetgathering.com
+# Verificación de email: solo aplica a quienes se registran con contraseña
+# (los login social y los usuarios creados por el admin entran ya verificados).
+# APP_URL debe ser exacta para que el link de verificación apunte bien:
+# APP_URL=https://artist.sunsetgathering.com/administracion
 
 # Social login (opcionales — los botones aparecen solo si están seteados)
 GOOGLE_CLIENT_ID=
