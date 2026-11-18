@@ -78,6 +78,10 @@ MICROSOFT_CLIENT_ID=
 MICROSOFT_CLIENT_SECRET=
 APPLE_CLIENT_ID=
 APPLE_CLIENT_SECRET=
+
+# Página del form de Elementor (link "Music Release Form" en el sidebar).
+# Producción: slug igual al que crees en wp-admin (p.ej. /music-release-form/).
+FORM_URL=https://artist.sunsetgathering.com/music-release-form/
 ```
 
 ## 4. Migraciones (una vez, y después en cada release)

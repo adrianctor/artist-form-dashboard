@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { CalendarDays, Camera, Globe, LayoutGrid, Music, Play, Users } from '@lucide/vue';
+import { CalendarDays, FileMusic, LayoutGrid, Music, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -39,6 +39,13 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: songs.index(),
             icon: Music,
         },
+        // Spec: "el form debe estar como opción en el menú" — external WP page.
+        {
+            title: 'Music Release Form',
+            href: page.props.formUrl ?? '#',
+            icon: FileMusic,
+            external: true,
+        },
     ];
 
     if (isAdmin.value) {
@@ -60,21 +67,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 });
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Website',
-        href: 'https://sunsetgathering.com',
-        icon: Globe,
-    },
-    {
-        title: 'YouTube',
-        href: 'https://www.youtube.com/@SunsetGathering',
-        icon: Play,
-    },
-    {
-        title: 'Instagram',
-        href: 'https://www.instagram.com/sunset_gathering/',
-        icon: Camera,
-    },
+    
 ];
 </script>
 

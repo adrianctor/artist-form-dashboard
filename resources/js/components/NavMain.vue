@@ -8,6 +8,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 defineProps<{
@@ -24,10 +25,20 @@ const { isCurrentUrl } = useCurrentUrl();
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
                     as-child
-                    :is-active="isCurrentUrl(item.href)"
+                    :is-active="!item.external && isCurrentUrl(item.href)"
                     :tooltip="item.title"
                 >
-                    <Link :href="item.href">
+                    <!-- External (WordPress form): plain anchor, new tab, keep the session. -->
+                    <a
+                        v-if="item.external"
+                        :href="toUrl(item.href) ?? '#'"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <component :is="item.icon" />
+                        <span>{{ item.title }}</span>
+                    </a>
+                    <Link v-else :href="item.href">
                         <component :is="item.icon" />
                         <span>{{ item.title }}</span>
                     </Link>

@@ -238,3 +238,18 @@ Verificación: **84 tests / 386 assertions**, `vue-tsc` limpio, `npm run build` 
    - XAMPP (Apache+MySQL) no arranca solo → `C:\xampp\xampp_start.exe`.
    - **Conflicto de puerto 80**: el Traefik del stack CONTAPP (`bootstrap-traefik-1`) publica `0.0.0.0:80->80` y le robaba el :80 a XAMPP → `localhost/wordpress` devolvía 404 de Apache Unix. Detenido con `docker stop bootstrap-traefik-1` (revivable con `docker start`; solo afecta al stack CONTAPP de otro proyecto, no a este dashboard).
    - Verificación E2E post-reboot: WP home/login/form 200, WP admin login 302→200, dashboard root→302 login, API 200, `/auth/google` → 302 accounts.google.com, Mailpit 200, **85 tests / 410 assertions**.
+
+### L12 — Form como opción en el menú del dashboard (2026-11-18)
+
+Pedido del usuario: *"el form debe estar como opción en el menú de user"* — el link a la página de WordPress/Elementor debe vivir en el sidebar del dashboard, no solo en DEPLOY.md.
+
+1. **Config `FORM_URL`** (`config/app.php` → `form_url`): default local `http://localhost/wordpress/music-release-form/`; producción en `DEPLOY.md` → `https://artist.sunsetgathering.com/music-release-form/`. Exposed a Inertia como `formUrl` desde `HandleInertiaRequests::share()`; tipado en `global.d.ts` (`sharedPageProps.formUrl`).
+2. **Sidebar**: item **Music Release Form** (icono `FileMusic`) en `mainNavItems` de `AppSidebar.vue`, visible para todos los roles (user y admin), después de Songs. `NavItem.external?: boolean`.
+3. **NavMain**: rama externa — `<a :href="toUrl(item.href)" target="_blank" rel="noopener noreferrer">` en vez de Inertia `Link` (la pestaña nueva conserva la sesión del dashboard); `is-active` nunca para externos.
+4. **Test RED→GREEN** (`DashboardTest::test_dashboard_shares_the_music_form_url_for_the_sidebar_menu`): `assertInertia where('formUrl', config('app.form_url'))`.
+5. **Verificación**: 86 tests / 420 assertions, `vue-tsc` limpio, `npm run build` OK (dentro de `afd-vite` — `node_modules/.vite-temp` en el host queda root-owned tras docker, EACCES; el contenedor escribe como root sin problema). E2E: login → `data-page` con `"formUrl":"http://localhost/wordpress/music-release-form/"`.
+
+Respuesta a las preguntas del usuario (mismo turno):
+- **¿Con qué perfil se guarda el envío del form?** El token Bearer solo autentica la API (compartido del form); la propiedad (`songs.user_id`) se asigna matcheando `artists[].email` contra los users del dashboard — si ningún email coincide, solo el admin la ve.
+- **¿Primero iniciar sesión?** Sí para el dashboard (middleware auth); el form de WordPress es público por diseño (artistas sin cuenta) — el menú con el link aparece *después* del login.
+- **Integración WordPress**: widget HTML en Elementor con `DASHBOARD_API_BASE` + `DASHBOARD_API_TOKEN` → `POST /api/v1/songs` con Bearer → ownership por email. Pasos en `DEPLOY.md` §5.

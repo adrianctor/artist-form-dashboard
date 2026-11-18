@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
+    /** External link (e.g. the WordPress form): opens in a new tab. */
+    external?: boolean;
 };

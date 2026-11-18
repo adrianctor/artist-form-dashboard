@@ -24,4 +24,16 @@ class DashboardTest extends TestCase
         $response = $this->get(route('dashboard'));
         $response->assertOk();
     }
+
+    public function test_dashboard_shares_the_music_form_url_for_the_sidebar_menu(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Dashboard')
+                ->where('formUrl', config('app.form_url')));
+    }
 }
