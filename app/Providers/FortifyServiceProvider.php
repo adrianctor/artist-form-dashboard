@@ -47,9 +47,16 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::createUsersUsing(CreateNewUser::class);
         /* @end-chisel-registration */
 
-        // Spec S3: deactivated users (is_active = false) cannot log in.
+        // Spec S1/S3: login accepts email OR username; inactive users are rejected.
         Fortify::authenticateUsing(function (Request $request) {
-            $user = \App\Models\User::where('email', strtolower($request->input(Fortify::username())))->first();
+            $login = trim((string) $request->input(Fortify::username()));
+
+            if ($login === '') {
+                return null;
+            }
+
+            $user = \App\Models\User::where('email', strtolower($login))->first()
+                ?? \App\Models\User::where('name', $login)->first();
 
             if ($user !== null
                 && $user->is_active
@@ -69,12 +76,10 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
-            // Spec S4: show a social button only when its credentials are configured.
-            'socialProviders' => array_values(array_filter([
-                'google' => (bool) config('services.google.client_id'),
-                'microsoft' => (bool) config('services.microsoft.client_id'),
-                'apple' => (bool) config('services.apple.client_id'),
-            ])),
+            // Spec S4: the three social buttons are always visible; clicking an
+            // unconfigured provider returns a clear "not configured" message
+            // instead of hiding the button or blowing up with a 503.
+            'socialProviders' => ['google', 'microsoft', 'apple'],
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [

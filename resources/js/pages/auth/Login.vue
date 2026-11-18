@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -12,9 +13,6 @@ import { Spinner } from '@/components/ui/spinner';
 /* @end-chisel-registration */
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-/* @chisel-passkeys */
-import PasskeyVerify from '@/components/PasskeyVerify.vue';
-/* @end-chisel-passkeys */
 
 defineOptions({
     layout: {
@@ -34,6 +32,12 @@ const providerLabels: Record<string, string> = {
     microsoft: 'Microsoft',
     apple: 'Apple',
 };
+
+// Errors flashed by SocialAuthController (unconfigured / failed providers).
+const page = usePage();
+const socialError = computed(
+    () => (page.props.errors as Record<string, string> | undefined)?.social,
+);
 </script>
 
 <template>
@@ -46,10 +50,6 @@ const providerLabels: Record<string, string> = {
         {{ status }}
     </div>
 
-    <!-- @chisel-passkeys -->
-    <PasskeyVerify />
-    <!-- @end-chisel-passkeys -->
-
     <Form
         v-bind="store.form()"
         :reset-on-success="['password']"
@@ -58,16 +58,16 @@ const providerLabels: Record<string, string> = {
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">Email or username</Label>
                 <Input
                     id="email"
-                    type="email"
+                    type="text"
                     name="email"
                     required
                     v-focus
                     :tabindex="1"
-                    autocomplete="email"
-                    placeholder="email@example.com"
+                    autocomplete="username"
+                    placeholder="admin or you@example.com"
                 />
                 <InputError :message="errors.email" />
             </div>
@@ -115,11 +115,9 @@ const providerLabels: Record<string, string> = {
         </div>
     </Form>
 
-    <!-- Spec S4: social login — rendered only for configured providers -->
-    <div
-        v-if="socialProviders && socialProviders.length > 0"
-        class="mt-6 space-y-3"
-    >
+    <!-- Spec S4: social login — always visible; unconfigured providers flash a clear error -->
+    <div class="mt-6 space-y-3">
+        <InputError :message="socialError" />
         <div class="relative">
             <div class="absolute inset-0 flex items-center">
                 <span class="w-full border-t" />

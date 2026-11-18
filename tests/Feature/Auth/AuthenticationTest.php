@@ -55,6 +55,19 @@ class AuthenticationTest extends TestCase
     }
     /* @end-chisel-2fa */
 
+public function test_users_can_authenticate_using_username()
+    {
+        $user = User::factory()->create(['name' => 'admin']);
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'admin',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
     public function test_users_can_not_authenticate_with_invalid_password()
     {
         $user = User::factory()->create();

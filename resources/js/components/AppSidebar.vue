@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, Music, Users } from '@lucide/vue';
+import { Camera, Globe, LayoutGrid, Music, Play, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -39,14 +39,19 @@ const mainNavItems: NavItem[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
+        title: 'Website',
+        href: 'https://sunsetgathering.com',
+        icon: Globe,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'YouTube',
+        href: 'https://www.youtube.com/@SunsetGathering',
+        icon: Play,
+    },
+    {
+        title: 'Instagram',
+        href: 'https://www.instagram.com/sunset_gathering/',
+        icon: Camera,
     },
 ];
 </script>

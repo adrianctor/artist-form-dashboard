@@ -30,8 +30,14 @@ class SocialAuthController extends Controller
     {
         abort_unless(isset(self::PROVIDERS[$provider]), 404);
 
-        // Buttons are hidden when unconfigured; guard direct hits too (S4).
-        abort_if(blank(config("services.{$provider}.client_id")), 503, ucfirst($provider).' login is not configured.');
+        // Unconfigured providers must degrade gracefully (S4): back to the
+        // login screen with a clear message instead of a 503 page.
+        if (blank(config("services.{$provider}.client_id"))) {
+            return redirect()->route('login')->withErrors([
+                'social' => ucfirst($provider).' sign-in is not configured. Set '
+                    .strtoupper($provider).'_CLIENT_ID and '.strtoupper($provider).'_CLIENT_SECRET in .env.',
+            ]);
+        }
 
         config(["services.{$provider}.redirect" => route("auth.provider.callback", $provider)]);
 
@@ -44,20 +50,27 @@ class SocialAuthController extends Controller
 
         config(["services.{$provider}.redirect" => route("auth.provider.callback", $provider)]);
 
+        if (blank(config("services.{$provider}.client_id"))) {
+            return redirect()->route('login')->withErrors([
+                'social' => ucfirst($provider).' sign-in is not configured. Set '
+                    .strtoupper($provider).'_CLIENT_ID and '.strtoupper($provider).'_CLIENT_SECRET in .env.',
+            ]);
+        }
+
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Throwable $e) {
             report($e);
 
             return redirect()->route('login')
-                ->withErrors(['email' => ucfirst($provider).' sign-in failed. Please try again.']);
+                ->withErrors(['social' => ucfirst($provider).' sign-in failed. Please try again.']);
         }
 
         $email = strtolower((string) ($socialUser->getEmail() ?? ''));
 
         if ($email === '') {
             return redirect()->route('login')
-                ->withErrors(['email' => ucfirst($provider).' did not provide an email address.']);
+                ->withErrors(['social' => ucfirst($provider).' did not provide an email address.']);
         }
 
         $user = User::where('email', $email)->first();
@@ -75,7 +88,7 @@ class SocialAuthController extends Controller
 
         if (! $user->is_active) {
             return redirect()->route('login')
-                ->withErrors(['email' => 'This account has been deactivated.']);
+                ->withErrors(['social' => 'This account has been deactivated.']);
         }
 
         Auth::login($user, remember: true);

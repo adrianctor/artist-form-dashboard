@@ -195,3 +195,18 @@ Impacto: el sistema (Laravel) NO integra con la API de WordPress ni con plugins;
 - **Página del form**: `/wordpress/music-release-form/` (page ID 6) con el HTML parcheado (kses removido al crear, scripts intactos). `.htaccess` de WP escrito a mano (wp-cli no lo hacía por rutas UNC).
 - **CORS API**: `HandleCors` default de Laravel responde `Access-Control-Allow-Origin: *` para `api/*` — el form en :80 puede llamar a :8000 (preflight 204 OK, verificado).
 - Credenciales WP: `admin` / `dashboard123` (misma que el dashboard).
+
+### L9 — Correcciones post-ajuste del usuario (2026-11-17)
+
+Pedidas una a una; todas verificadas con tests/E2E:
+
+1. **Form con estilo de sunsetgathering.com**: `reference/home.html` es el export del sitio (body #000, texto #fff, font **Quicksand** vía Google Fonts, campos `#f3f7ff` con borde `2px #5b7fff`, focus `#2952ff` + glow `rgba(41,82,255,.2)`, botones `#2952ff`/`#5b7fff`). `wordpress/music-release-form.html` re-estilado con esos tokens + logo `logo2-1.png` arriba; re-sincronizado a la página 6 de WP.
+2. **Login social siempre visible**: `socialProviders` ya no se filtra por env (siempre `google,microsoft,apple`); proveedor sin credenciales → 302 a `/login` con error flash `social` (antes: botón oculto o 503). **Para que funcione de verdad hacen falta `GOOGLE_CLIENT_ID/SECRET`, `MICROSOFT_*`, `APPLE_*` en `.env`** (consola de cada proveedor) — eso no lo puedo crear yo.
+3. **Sin home de Laravel**: ruta `/` ahora redirige a `/login` (guest) o `/dashboard` (auth); `Welcome.vue` eliminado; favicon.svg de Laravel eliminado → `favicon-32/192.png` + `apple-touch-icon.png` de `cropped-sunset-*`; `AppLogoIcon` = `logo2-1.png`; footer del sidebar → sitio/YouTube/Instagram reales; `APP_NAME=Sunset Gathering` (title del browser).
+4. **Ruta por defecto = login**: verificado E2E `GET /` → 302 `/login`.
+5. **Sin passkeys** (no pedidas): `Features::passkeys` fuera de config, `PasskeyVerify`/`ManagePasskeys`/`PasskeyItem`/`PasskeyRegister` borrados, ruta `.well-known/passkey-endpoints` borrada, UI limpia en Login/ConfirmPassword/Security.
+6. **Login acepta username**: campo `type=text` "Email or username"; `authenticateUsing` busca por email O por name. E2E: `email=admin&password=dashboard123` → 302 `/dashboard`. (Antes el `type=email` de HTML5 rechazaba "admin".)
+7. **Estilo global sunset**: `app.css` tokens → fondo `#000`, texto `#fff`, primary `#2952ff`, ring/accent `#5b7fff`, sidebar negra; font `Quicksand` (bunny fonts reemplaza Instrument Sans); `HandleAppearance` default `dark`; `app.blade` background `#000`.
+8. **WP admin**: el login **sí funciona** — `admin` / `dashboard123` en `http://localhost/wordpress/wp-login.php` → 302 → `/wp-admin/` 200 (verificado con curl fresco). El bug previo era el `siteurl` roto (`/htdocs/wordpress`), ya corregido en L8. Si el navegador viejo guardó cookies del siteurl roto: borrar cookies de `localhost`.
+
+Verificación final: `php artisan test` → **70 passed (310 assertions)**, `vue-tsc` limpio, `npm run build` OK.
