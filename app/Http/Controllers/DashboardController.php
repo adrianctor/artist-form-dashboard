@@ -16,13 +16,18 @@ class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
+        // Users only see their own songs; admins see everything (spec S5).
+        $visible = fn () => Song::query()->visibleTo($request->user());
+
         return Inertia::render('Dashboard', [
             'stats' => [
-                'total_songs' => Song::count(),
-                'total_submissions' => (int) Song::sum('submission_count'),
-                'songs_this_month' => Song::where('created_at', '>=', now()->startOfMonth())->count(),
+                'total_songs' => $visible()->count(),
+                'total_submissions' => (int) $visible()->sum('submission_count'),
+                'songs_this_month' => $visible()
+                    ->where('created_at', '>=', now()->startOfMonth())
+                    ->count(),
             ],
-            'recentSongs' => Song::query()
+            'recentSongs' => $visible()
                 ->orderByDesc('updated_at')
                 ->limit(8)
                 ->get()

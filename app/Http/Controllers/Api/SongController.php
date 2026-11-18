@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Song;
 use App\Models\SongSubmission;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -52,7 +53,17 @@ class SongController extends Controller
         $songCode = $validated['song_code'] ?? null;
         unset($validated['song_code']);
 
-        $result = DB::transaction(function () use ($validated, $songCode) {
+        // Ownership: match any artist email from the form against dashboard
+        // users (spec: users only see the songs they registered).
+        $artistEmails = array_map(
+            'strtolower',
+            array_filter(array_column($validated['artists'] ?? [], 'email'))
+        );
+        $ownerId = $artistEmails
+            ? User::whereIn('email', $artistEmails)->value('id')
+            : null;
+
+        $result = DB::transaction(function () use ($validated, $songCode, $ownerId) {
             if ($songCode) {
                 $song = Song::where('song_code', $songCode)->first();
 
@@ -64,6 +75,7 @@ class SongController extends Controller
             } else {
                 $song = Song::create([
                     'song_code' => Song::generateSongCode(),
+                    'user_id' => $ownerId,
                     'track_title' => $validated['track_title'],
                     'submission_count' => 0,
                 ]);
@@ -77,6 +89,8 @@ class SongController extends Controller
             $song->update([
                 'track_title' => $validated['track_title'],
                 'submission_count' => $song->submission_count + 1,
+                // Backfill ownership for songs submitted before the owner had an account.
+                'user_id' => $song->user_id ?? $ownerId,
             ]);
 
             return ['song' => $song->fresh(), 'submission' => $submission];

@@ -12,7 +12,6 @@ const props = defineProps<{
         id: number;
         name: string;
         email: string;
-        role: string;
         is_active: boolean;
     };
 }>();
@@ -22,7 +21,6 @@ const form = useForm({
     email: props.user.email,
     password: '',
     password_confirmation: '',
-    role: props.user.role,
     is_active: props.user.is_active,
 });
 
@@ -67,18 +65,6 @@ function submit(): void {
                 <Label for="password_confirmation">Confirm new password</Label>
                 <Input id="password_confirmation" v-model="form.password_confirmation" type="password" autocomplete="new-password" />
                 <InputError :message="form.errors.password_confirmation" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="role">Role</Label>
-                <select
-                    id="role"
-                    v-model="form.role"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                </select>
-                <InputError :message="form.errors.role" />
             </div>
             <div class="flex items-center gap-2">
                 <input

@@ -54,19 +54,17 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
+        // Spec L10: created accounts are always role "user" —
+        // the single admin is seeded and never created through this UI.
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['nullable', 'string', 'in:admin,user'],
         ]);
-
-        $role = $validated['role'] ?? 'user';
-        unset($validated['role']);
 
         // Admin-created accounts skip email verification (S1: no public signup).
         $user = User::create($validated + ['email_verified_at' => now()]);
-        $user->assignRole($role);
+        $user->assignRole('user');
 
         return redirect()->route('users.index')->with('success', 'User created.');
     }
@@ -96,30 +94,27 @@ class UserController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role' => ['nullable', 'string', 'in:admin,user'],
+            // 'role' is intentionally absent: roles are immutable (spec L10).
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        $role = $validated['role'] ?? null;
         $isActive = array_key_exists('is_active', $validated)
             ? (bool) $validated['is_active']
             : (bool) $user->is_active;
-        unset($validated['role'], $validated['is_active']);
+        unset($validated['is_active']);
 
         if (blank($validated['password'] ?? null)) {
             unset($validated['password']);
         }
 
-        // Guard: never deactivate or demote the acting admin's own account.
-        if ($user->is(auth()->user()) && (! $isActive || ($role !== null && $role !== 'admin'))) {
-            return back()->with('error', 'You cannot deactivate or demote your own account.');
+        // Spec L10: never deactivate the acting admin's own account.
+        if ($user->is(auth()->user()) && ! $isActive) {
+            return back()->with('error', 'You cannot deactivate your own account.');
         }
 
+        // Roles are immutable here: there is exactly one admin (seeded)
+        // and everyone else is a user (spec L10).
         $user->update($validated + ['is_active' => $isActive]);
-
-        if ($role !== null) {
-            $user->syncRoles([$role]);
-        }
 
         return redirect()->route('users.index')->with('success', 'User updated.');
     }

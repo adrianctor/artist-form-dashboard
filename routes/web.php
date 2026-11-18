@@ -19,6 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
+require __DIR__.'/calendar.php';
 require __DIR__.'/social.php';
 require __DIR__.'/songs.php';
 require __DIR__.'/users.php';

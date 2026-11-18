@@ -12,7 +12,6 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
-    role: 'user',
 });
 
 defineOptions({
@@ -55,18 +54,6 @@ function submit(): void {
                 <Label for="password_confirmation">Confirm password</Label>
                 <Input id="password_confirmation" v-model="form.password_confirmation" type="password" autocomplete="new-password" required />
                 <InputError :message="form.errors.password_confirmation" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="role">Role</Label>
-                <select
-                    id="role"
-                    v-model="form.role"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                </select>
-                <InputError :message="form.errors.role" />
             </div>
             <div class="flex gap-3">
                 <Button type="submit" :disabled="form.processing">Create user</Button>

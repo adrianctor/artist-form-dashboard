@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 /* @chisel-registration */
 /* @end-chisel-registration */
+import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
@@ -114,6 +115,11 @@ const socialError = computed(
             </Button>
         </div>
     </Form>
+
+    <p class="text-center text-sm text-muted-foreground">
+        Don't have an account?
+        <TextLink :href="register()" :tabindex="6">Sign up</TextLink>
+    </p>
 
     <!-- Spec S4: social login — always visible; unconfigured providers flash a clear error -->
     <div class="mt-6 space-y-3">

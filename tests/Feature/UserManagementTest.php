@@ -180,10 +180,11 @@ class UserManagementTest extends TestCase
         $this->assertTrue($target->fresh()->is_active);
     }
 
-    public function test_admin_can_change_user_role(): void
+    public function test_role_cannot_be_escalated_through_user_management(): void
     {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        // Spec L10: exactly one admin (seeded). The management UI can never
+        // grant or change roles — a role payload is simply ignored.
+        $admin = $this->admin();
         $target = User::factory()->create();
         $target->assignRole('user');
 
@@ -195,7 +196,9 @@ class UserManagementTest extends TestCase
             ])
             ->assertRedirect(route('users.index'));
 
-        $this->assertTrue($target->fresh()->hasRole('admin'));
+        $fresh = $target->fresh();
+        $this->assertTrue($fresh->hasRole('user'));
+        $this->assertFalse($fresh->hasRole('admin'));
     }
 
     public function test_inactive_user_cannot_log_in(): void

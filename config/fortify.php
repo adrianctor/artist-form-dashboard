@@ -167,6 +167,7 @@ return [
     */
 
     'features' => [
+        Features::registration(),
         Features::resetPasswords(),
         /* @chisel-email-verification */
         Features::emailVerification(),

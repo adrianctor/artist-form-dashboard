@@ -18,6 +18,7 @@ class Song extends Model
 
     protected $fillable = [
         'song_code',
+        'user_id',
         'track_title',
         'submission_count',
     ];
@@ -32,6 +33,24 @@ class Song extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(SongSubmission::class);
+    }
+
+    public function owner(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
+
+    /**
+     * Songs visible to the given user: admins see everything, users only
+     * the ones they own (matched via the form's artist emails).
+     */
+    public function scopeVisibleTo(\Illuminate\Database\Eloquent\Builder $query, \App\Models\User $user): \Illuminate\Database\Eloquent\Builder
+    {
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        return $query->where('user_id', $user->id);
     }
 
     public static function generateSongCode(): string

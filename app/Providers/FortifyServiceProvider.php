@@ -82,6 +82,10 @@ class FortifyServiceProvider extends ServiceProvider
             'socialProviders' => ['google', 'microsoft', 'apple'],
         ]));
 
+        Fortify::registerView(fn () => Inertia::render('auth/Register', [
+            'passwordRules' => Password::defaults()->toPasswordRulesString(),
+        ]));
+
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [
             'email' => $request->email,
             'token' => $request->route('token'),

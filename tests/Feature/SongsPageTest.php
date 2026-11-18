@@ -19,13 +19,15 @@ class SongsPageTest extends TestCase
 
     public function test_authenticated_users_can_view_the_songs_index(): void
     {
+        $user = User::factory()->create();
         $song = Song::create([
             'song_code' => 'SONG-INDEX01',
+            'user_id' => $user->id,
             'track_title' => 'Midnight Drive',
             'submission_count' => 1,
         ]);
 
-        $response = $this->actingAs(User::factory()->create())->get('/songs');
+        $response = $this->actingAs($user)->get('/songs');
 
         $response->assertOk()->assertInertia(fn ($page) => $page
             ->component('songs/Index')
@@ -38,8 +40,10 @@ class SongsPageTest extends TestCase
 
     public function test_authenticated_users_can_view_a_song_with_its_submissions(): void
     {
+        $user = User::factory()->create();
         $song = Song::create([
             'song_code' => 'SONG-DETAIL01',
+            'user_id' => $user->id,
             'track_title' => 'Northern Lights',
             'submission_count' => 2,
         ]);
@@ -58,7 +62,7 @@ class SongsPageTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs(User::factory()->create())->get('/songs/'.$song->song_code);
+        $response = $this->actingAs($user)->get('/songs/'.$song->song_code);
 
         $response->assertOk()->assertInertia(fn ($page) => $page
             ->component('songs/Show')

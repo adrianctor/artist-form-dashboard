@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { Camera, Globe, LayoutGrid, Music, Play, Users } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { CalendarDays, Camera, Globe, LayoutGrid, Music, Play, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -14,28 +15,49 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { calendar, dashboard } from '@/routes';
 import songs from '@/routes/songs';
 import users from '@/routes/users';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Songs',
-        href: songs.index(),
-        icon: Music,
-    },
-    {
-        title: 'Users',
-        href: users.index(),
-        icon: Users,
-    },
-];
+const page = usePage();
+const roles = computed(
+    () => (page.props.auth as { roles?: string[] } | undefined)?.roles ?? [],
+);
+const isAdmin = computed(() => roles.value.includes('admin'));
+
+// Spec L10: Calendar and user management are admin-only.
+const mainNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Songs',
+            href: songs.index(),
+            icon: Music,
+        },
+    ];
+
+    if (isAdmin.value) {
+        items.push(
+            {
+                title: 'Calendar',
+                href: calendar(),
+                icon: CalendarDays,
+            },
+            {
+                title: 'Users',
+                href: users.index(),
+                icon: Users,
+            },
+        );
+    }
+
+    return items;
+});
 
 const footerNavItems: NavItem[] = [
     {
