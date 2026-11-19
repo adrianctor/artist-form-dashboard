@@ -106,7 +106,7 @@ function formatDate(value: string | null): string {
                             >
                                 <span class="min-w-0">
                                     <span class="block truncate font-medium">{{ song.track_title || 'Untitled song' }}</span>
-                                    <span class="mt-1 block text-xs text-muted-foreground">{{ song.song_code }}</span>
+                                    <span class="mt-1 block text-xs text-muted-foreground">Catalogo · {{ song.song_code }}</span>
                                 </span>
                                 <span class="shrink-0 text-right text-xs text-muted-foreground">
                                     <span class="block">{{ song.submission_count }} versions</span>

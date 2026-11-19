@@ -198,8 +198,9 @@ function selectDay(cell: DayCell): void {
                         >
                             {{ song.track_title }}
                         </Link>
-                        <span class="font-mono text-xs text-muted-foreground">
-                            {{ song.song_code }}
+                        <span class="text-xs text-muted-foreground">
+                            Catalogo
+                            <span class="font-mono">{{ song.song_code }}</span>
                         </span>
                     </div>
                     <span class="shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">

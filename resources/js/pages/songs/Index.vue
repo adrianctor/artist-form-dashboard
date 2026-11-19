@@ -53,7 +53,7 @@ function formatDate(value: string | null): string {
 }
 
 const columns: ColumnDef<typeof features, SongRow>[] = [
-    { accessorKey: 'song_code', header: 'Song Code' },
+    { accessorKey: 'song_code', header: 'Catalogo' },
     { accessorKey: 'track_title', header: 'Track Title' },
     { accessorKey: 'submission_count', header: 'Versions' },
     {

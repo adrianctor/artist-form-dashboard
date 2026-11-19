@@ -150,7 +150,10 @@ defineOptions({
             </Link>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0">
-                    <p class="font-mono text-sm text-muted-foreground">{{ song.song_code }}</p>
+                    <p class="text-sm text-muted-foreground">
+                        Catalogo
+                        <span class="font-mono">{{ song.song_code }}</span>
+                    </p>
                     <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ song.track_title || 'Untitled song' }}</h1>
                 </div>
                 <Badge variant="secondary">{{ song.submission_count }} {{ song.submission_count === 1 ? 'version' : 'versions' }}</Badge>

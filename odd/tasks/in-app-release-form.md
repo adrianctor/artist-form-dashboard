@@ -76,7 +76,7 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T5 | S1, S3, S4 | inline | done | (commit) |
 | T6 | S1, S3 | inline | done | (commit) |
 | T7 | S2 | inline | done | (commit) |
-| T8 | S2 | inline | pending | — |
+| T8 | S7 | inline | done | (commit) |
 | T9 | S7 | inline | pending | — |
 
 - T1: migración `artist_profiles` + modelo + relación `User::artistProfile` + `hasCompleteArtistProfile()` + tests de completitud (RED→GREEN).
@@ -138,3 +138,7 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 2. **Cuerpo**: placeholder estructurado con TODOS los campos (tabla release + bloque por artista + links) — **pendiente el template del usuario** (ofrecido en L1, aún no enviado). Render con `e()` escaping. Se cambia el `content()` cuando llegue.
 3. **Wire**: `ReleaseFormController::store` envía después de la persistencia exitosa; validación fallida → no se envía (test).
 4. Tests `ReleaseFormEmailTest` (3) RED→GREEN: recipients, contenido del body (track/genre/Afrodise/email), no-send en validación. Suite: **127 tests / 566 assertions**.
+
+### L8 — T8: rename Song Code → Catalogo (2026-11-19)
+
+Labels visibles renombrados (spec S7): columna del índice (`header: 'Catalogo'`), cabecera del show ("Catalogo" + valor mono), lista reciente del Dashboard (`Catalogo · SONG-…`), detalle del calendario. El identificador sigue auto-generándose (`SONG-`+8 hex) — el form no lo muestra ni lo llena (pendiente futuro). Sin tests que pinnearan el texto viejo; suite **127/564**, vue-tsc 0, build OK.
