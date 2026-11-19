@@ -75,7 +75,7 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T4 | S4 | inline | done | (commit) |
 | T5 | S1, S3, S4 | inline | done | (commit) |
 | T6 | S1, S3 | inline | done | (commit) |
-| T7 | S1, S3 | inline | pending | — |
+| T7 | S2 | inline | done | (commit) |
 | T8 | S2 | inline | pending | — |
 | T9 | S7 | inline | pending | — |
 
@@ -131,3 +131,10 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 3. **API BC**: `SongController` ahora acepta `publishing` nullable (`in:afrodise,none`) y delega al servicio — 8 tests de API siguen verdes.
 4. **Frontend**: `showSuccess` lee `?submitted=1` de la URL de Inertia (skip del disclaimer al volver, success box visible).
 5. Tests `ReleaseFormSubmitTest` (7) RED→GREEN: guest→login, submit crea song+ownership+publishing en payload, `none` aceptado, publishing inválido→422, track_title vacío→422, Existing sin links→`artists.0.links`, flag submitted. Suite: **124 tests / 557 assertions**, vue-tsc 0, build OK.
+
+### L7 — T7: email del sistema reemplaza EmailJS (2026-11-19)
+
+1. **`Mail/ReleaseFormSubmitted`**: envelope con `to: info@sunsetgathering.com`, `cc:` emails de artistas (únicos), `reply_to:` primer artista — espejo del EmailJS original. **Gotcha**: asignar `cc`/`replyTo` directo a la propiedad del `Envelope` salta `normalizeAddresses` → "Attempt to read property address on string"; pasar todo por el constructor. `Mail::send($mailable)` (sin `Mail::to()` — el envelope ya lleva recipients, el wrapper duplicaría `to`).
+2. **Cuerpo**: placeholder estructurado con TODOS los campos (tabla release + bloque por artista + links) — **pendiente el template del usuario** (ofrecido en L1, aún no enviado). Render con `e()` escaping. Se cambia el `content()` cuando llegue.
+3. **Wire**: `ReleaseFormController::store` envía después de la persistencia exitosa; validación fallida → no se envía (test).
+4. Tests `ReleaseFormEmailTest` (3) RED→GREEN: recipients, contenido del body (track/genre/Afrodise/email), no-send en validación. Suite: **127 tests / 566 assertions**.

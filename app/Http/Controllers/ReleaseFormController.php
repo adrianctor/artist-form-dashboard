@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ReleaseFormSubmitted;
 use App\Services\SongSubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -91,6 +93,10 @@ class ReleaseFormController extends Controller
         }
 
         $this->submissions->submit($validated);
+
+        // Spec S2: system email replaces EmailJS (same recipients). The
+        // mailable's envelope carries to/cc/replyTo.
+        Mail::send(new ReleaseFormSubmitted($validated));
 
         return redirect()
             ->route('release-form', ['submitted' => 1])
