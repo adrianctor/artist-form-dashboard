@@ -30,6 +30,9 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            // Spec S2: factory users know their password. Tests for the
+            // first-time-setup flow pass ['password_set_at' => null].
+            'password_set_at' => now(),
             'remember_token' => Str::random(10),
             /* @chisel-2fa */
             'two_factor_secret' => null,

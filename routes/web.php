@@ -39,3 +39,4 @@ require __DIR__.'/social.php';
 require __DIR__.'/songs.php';
 require __DIR__.'/users.php';
 require __DIR__.'/settings.php';
+require __DIR__.'/password-setup.php';

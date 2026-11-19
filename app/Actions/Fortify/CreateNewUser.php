@@ -30,6 +30,8 @@ class CreateNewUser implements CreatesNewUsers
             'email' => $input['email'],
             'password' => $input['password'],
         ]);
+        // Spec S2: this account chose its password at signup.
+        $user->forceFill(['password_set_at' => now()])->save();
 
         // Spec L10: self-registered accounts are always role "user".
         // The single admin is seeded (label@admin.com) and never self-serves.

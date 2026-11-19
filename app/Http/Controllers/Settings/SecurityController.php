@@ -42,6 +42,9 @@ class SecurityController extends Controller
                 : [],
             /* @end-chisel-passkeys */
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            // Spec S1: social signups never chose a password — show the
+            // first-time setup flow instead of "current password".
+            'mustSetFirstPassword' => $request->user()->password_set_at === null,
         ];
 
         /* @chisel-2fa */
@@ -61,9 +64,11 @@ class SecurityController extends Controller
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $request->user()->forceFill([
             'password' => $request->password,
-        ]);
+            // Spec S2: after this point the user knows their password.
+            'password_set_at' => now(),
+        ])->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
 

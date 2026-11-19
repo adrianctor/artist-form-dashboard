@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Apple\AppleExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -38,6 +39,11 @@ class AppServiceProvider extends ServiceProvider
     protected function configureSocialiteProviders(): void
     {
         Event::listen(SocialiteWasCalled::class, MicrosoftExtendSocialite::class.'@handle');
+        // Spec S2: resetting a password by email means the user now knows
+        // their password — they leave the first-time-setup flow.
+        Event::listen(PasswordReset::class, function (PasswordReset $event) {
+            $event->user->forceFill(['password_set_at' => now()])->save();
+        });
         Event::listen(SocialiteWasCalled::class, AppleExtendSocialite::class.'@handle');
     }
 

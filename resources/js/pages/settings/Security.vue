@@ -15,6 +15,8 @@ import ManageTwoFactor from '@/components/ManageTwoFactor.vue';
 // oxfmt-ignore
 type Props = {
     passwordRules: string;
+    // Spec S1: social signups never chose a password.
+    mustSetFirstPassword: boolean;
 } /* @chisel-2fa */ &
     ManageTwoFactorProps; /* @end-chisel-2fa */
 
@@ -38,6 +40,31 @@ defineOptions({
     <h1 class="sr-only">Security settings</h1>
 
     <div class="space-y-6">
+        <!-- Spec S1: no password yet (social signup) -> emailed setup link
+             instead of the impossible "current password" question. -->
+        <template v-if="mustSetFirstPassword">
+            <Heading
+                variant="small"
+                title="Set your password"
+                description="You signed up with a social login and haven't chosen a password yet. We'll email you a secure link to set one."
+            />
+
+            <Form
+                action="/settings/security/setup-password-link"
+                method="post"
+                v-slot="{ processing }"
+            >
+                <Button
+                    type="submit"
+                    :disabled="processing"
+                    data-test="send-setup-link-button"
+                >
+                    Email me a setup link
+                </Button>
+            </Form>
+        </template>
+
+        <template v-else>
         <Heading
             variant="small"
             title="Update password"
@@ -105,6 +132,7 @@ defineOptions({
                 </Button>
             </div>
         </Form>
+        </template>
     </div>
 
     <!-- @chisel-2fa -->
