@@ -172,3 +172,14 @@ Movido del dropdown `UserMenuContent` (footer del sidebar) a `mainNavItems` de `
 **Fix**: nuevo `resources/js/components/ui/textarea/Textarea.vue` (mismo patrón que `ui/input/Input.vue`: `useVModel` + `defaultValue` → bindea `value` del DOM) + `index.ts`; `MyProfile.vue` lo usa con `:default-value="profile?.bio"`. Compilación verificada con `@vue/compiler-dom`: `v-model` genera `onUpdate:modelValue` (bindeo real), no atributo.
 
 **Verificación**: `vue-tsc` 0, suite **126/555**, build OK. E2E: login → props con bio → PATCH → BD + props actualizados.
+
+### L13 — Campos del form: fondo de página + placeholder gris profile (2026-11-19)
+
+> "estos campos del form no los dejes blancos se ve horrible, dejalos del fondo de la pagina y el texto en el mismo gris de los placeholder como en profile"
+
+El CSS portado traía `background:#f3f7ff` + `color:#000` (los campos blancos del HTML original de WP). En `resources/css/music-release-form.css`:
+- `background: var(--background, #000000)` (fondo de la página) y `color:#fff`.
+- `::placeholder { color:#a1a1aa }` — el mismo gris de los placeholders de Profile (`placeholder:text-muted-foreground` → `--muted-foreground: #a1a1aa`).
+- `select:required:invalid { color:#a1a1aa }` (hint "Select" hasta elegir).
+- Guard `:-webkit-autofill` (Chrome repintaba campos blancos con autofill del email).
+Verificación: build OK, CSS construido sin `#f3f7ff` y con `var(--background,#000)` + `#a1a1aa` (grep), suite **126/555**, vue-tsc 0. Sin runner de tests de CSS → check estructural del bundle.

@@ -192,12 +192,33 @@
     padding:14px;
     border-radius:14px;
     border:2px solid #5b7fff;
-    background:#f3f7ff;
-    color:#000;
+    /* Page background instead of the white #f3f7ff (user request: black fields). */
+    background:var(--background, #000000);
+    color:#fff;
     font-weight:600;
     outline:none;
     box-shadow:0 4px 15px rgba(91,127,255,.15);
     transition:all .3s ease;
+}
+
+/* Placeholder gray matching Profile inputs (placeholder:text-muted-foreground). */
+#musicReleaseForm input::placeholder,
+#musicReleaseForm textarea::placeholder{
+    color:#a1a1aa;
+}
+
+/* Empty required selects read as a hint until a value is picked. */
+#musicReleaseForm select:required:invalid{
+    color:#a1a1aa;
+}
+
+/* Chrome autofill repaints fields white — pin them to the page background. */
+#musicReleaseForm input:-webkit-autofill,
+#musicReleaseForm input:-webkit-autofill:hover,
+#musicReleaseForm input:-webkit-autofill:focus{
+    -webkit-text-fill-color:#fff;
+    box-shadow:0 0 0 1000px var(--background, #000000) inset;
+    transition:background-color 9999s ease-out;
 }
 
 #musicReleaseForm textarea{
