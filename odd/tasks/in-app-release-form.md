@@ -69,9 +69,9 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
-| T1 | S5 | inline | done | (commit) |
-| T2 | S5 | inline | done | (commit) |
-| T3 | S5 | inline | pending | — |
+| T1 | S5 | inline | done | 38de594 |
+| T2 | S5 | inline | done | 38de594 |
+| T3 | S5, S6 | inline | done | 22a64ea |
 | T4 | S6 | inline | pending | — |
 | T5 | S4 | inline | pending | — |
 | T6 | S1 | inline | pending | — |
@@ -102,3 +102,11 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 3. **Factory**: `UserFactory::configure()` crea un perfil completo vía `afterCreating` (los tests existentes de otras features necesitan usuarios que pasen el gate). Gotcha Laravel: `configure()` debe **devolver** el resultado de `afterCreating()` (devuelve nueva instancia) — `: void` rompe la cadena `->configure()->count()` con "count() on null". Tests que necesitan usuario sin perfil lo borran (`artistProfile()->delete()`).
 4. **SocialLoginTest adaptado**: signup social nuevo → primer destino ahora `my-profile` (gate S5), ya no dashboard directo. El pino de "no cae en /email/verify" se mantiene (assertRedirect my-profile, no verification.notice).
 5. Suite: **100 tests / 443 assertions** verdes.
+
+### L3 — T3: página My profile + guardado + item de menú (2026-11-19)
+
+1. **Endpoint** `PATCH /my-profile` (`ArtistProfileController::update`): valida los 9 campos required + `status in (New Artist, Existing Artist)` + `links.*` (12 plataformas); regla condicional — `Existing Artist` exige ≥1 link no vacío (error `links`), `New Artist` normaliza links a solo no-vacíos. `updateOrCreate` por `user_id`. Éxito → `to_route('dashboard')` (el gate lo deja pasar) + toast.
+2. **Página `MyProfile.vue`**: campos de la sección artist del HTML (artist_name, real_name, role, country, city, estate, photo, bio) + radio cards **ARTIST PROFILE STATUS** (New/Existing, misma copy y estilo `#39d353` del form) + grid de 12 platform links (3 primeros marcados `*` si Existing). Inertia `Form` + Wayfinder (`wayfinder:generate --with-form` — sin `--with-form` rompe `.form()` de todas las páginas).
+3. **Menú**: item **My profile** (icono User) en `UserMenuContent.vue` debajo de Settings — lo reusan NavUser y AppHeader. Spec S6.
+4. **Gotcha vue-tsc**: `placeholder="https://..."` (con `//` + `...`) en atributos estáticos rompe el parser del template — `errors`/`processing` del `v-slot` y variables de `v-for` dejan de resolver desde ese punto (TS2304 en cadena). Fix: quitar `//`+`...` de placeholders (`"https://"` solo también falla; `"Link URL"` OK).
+5. Tests: `MyProfileTest` (6) RED→GREEN. Suite: **106 tests / 477 assertions**, `vue-tsc` 0 errores, build OK (en `afd-vite`), E2E `GET /my-profile` → `component: MyProfile`. Commit `22a64ea`.
