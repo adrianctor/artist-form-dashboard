@@ -13,6 +13,11 @@ const props = defineProps<{
     data: Record<string, number>;
 }>();
 
+// Spec: never show an empty chart — tell the user what it is for.
+const hasActivity = computed(() =>
+    Object.values(props.data).some((count) => count > 0),
+);
+
 const option = computed<EChartsOption>(() => {
     const days = Object.keys(props.data).sort();
 
@@ -46,5 +51,17 @@ const option = computed<EChartsOption>(() => {
 </script>
 
 <template>
-    <VChart :option="option" autoresize class="h-72 w-full" aria-label="Daily submissions over the last 30 days" />
+    <VChart
+        v-if="hasActivity"
+        :option="option"
+        autoresize
+        class="h-72 w-full"
+        aria-label="Daily submissions over the last 30 days"
+    />
+    <p
+        v-else
+        class="flex h-72 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground"
+    >
+        No submissions in the last 30 days — send a release to see activity here.
+    </p>
 </template>

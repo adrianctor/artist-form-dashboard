@@ -14,7 +14,6 @@ interface DashboardStats {
 interface RecentSong {
     song_code: string;
     track_title: string | null;
-    submission_count: number;
     updated_at: string | null;
 }
 
@@ -22,7 +21,16 @@ defineProps<{
     stats: DashboardStats;
     recentSongs: RecentSong[];
     submissionsDaily: Record<string, number>;
+    recentSubmissions: RecentSubmission[];
 }>();
+
+interface RecentSubmission {
+    id: number;
+    song_code: string;
+    track_title: string;
+    created_by: string;
+    created_at: string | null;
+}
 
 defineOptions({
     layout: {
@@ -84,6 +92,31 @@ function formatDate(value: string | null): string {
                 </CardHeader>
                 <CardContent>
                     <SubmissionsChart :data="submissionsDaily" />
+
+                    <div
+                        v-if="recentSubmissions.length"
+                        class="mt-4 space-y-2 border-t pt-4"
+                    >
+                        <p class="text-sm font-medium">Latest submissions</p>
+                        <!-- Bounded so a flood of submits cannot stretch the card. -->
+                        <ul class="max-h-72 space-y-1.5 overflow-y-auto pr-1">
+                            <li
+                                v-for="submission in recentSubmissions"
+                                :key="submission.id"
+                                class="flex items-center justify-between gap-3 text-sm"
+                            >
+                                <Link
+                                    :href="songRoutes.show.url({ songCode: submission.song_code })"
+                                    class="min-w-0 truncate hover:text-primary"
+                                >
+                                    {{ submission.track_title }}
+                                </Link>
+                                <span class="shrink-0 text-xs text-muted-foreground">
+                                    {{ submission.created_by }} · {{ formatDate(submission.created_at) }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -109,8 +142,7 @@ function formatDate(value: string | null): string {
                                     <span class="mt-1 block text-xs text-muted-foreground">Catalogo · {{ song.song_code }}</span>
                                 </span>
                                 <span class="shrink-0 text-right text-xs text-muted-foreground">
-                                    <span class="block">{{ song.submission_count }} versions</span>
-                                    <span class="mt-1 block">{{ formatDate(song.updated_at) }}</span>
+                                    <span class="block">{{ formatDate(song.updated_at) }}</span>
                                 </span>
                             </Link>
                         </li>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import songRoutes from '@/routes/songs';
@@ -12,7 +11,6 @@ interface SongDetails {
     id: number;
     song_code: string;
     track_title: string | null;
-    submission_count: number;
     updated_at: string | null;
 }
 
@@ -126,11 +124,6 @@ defineOptions({
                     </p>
                     <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ song.track_title || 'Untitled song' }}</h1>
                 </div>
-                <!-- Spec S10: no "versions" wording in a submit's info. -->
-                <Badge variant="secondary">
-                    {{ song.submission_count }}
-                    {{ song.submission_count === 1 ? 'submission' : 'submissions' }}
-                </Badge>
             </div>
         </header>
 

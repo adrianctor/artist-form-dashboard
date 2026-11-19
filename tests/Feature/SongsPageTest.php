@@ -34,7 +34,6 @@ class SongsPageTest extends TestCase
             ->has('songs.data', 1)
             ->where('songs.data.0.song_code', $song->song_code)
             ->where('songs.data.0.track_title', $song->track_title)
-            ->where('songs.data.0.submission_count', 1)
         );
     }
 
@@ -68,7 +67,7 @@ class SongsPageTest extends TestCase
             ->component('songs/Show')
             ->where('song.song_code', $song->song_code)
             ->where('song.track_title', $song->track_title)
-            ->where('song.submission_count', 2)
+            ->missing('song.submission_count')
             ->has('submissions', 2)
             ->where('submissions.0.track_title', 'Northern Lights (v2)')
             ->where('submissions.0.payload.genre', 'Dream pop')
@@ -170,6 +169,67 @@ class SongsPageTest extends TestCase
                 ->where('submissions.0.payload.writers', 'Some Writer')
                 ->where('submissions.0.payload.artists.0.email', 'full.artist@example.com')
                 ->where('submissions.0.payload.artists.0.links.spotify', 'https://open.spotify.com/x')
+            );
+    }
+
+    public function test_index_shows_all_artists_and_the_creator(): void
+    {
+        // Spec: Versions column becomes the artists (union across every
+        // submit) plus a Created by column — no submission counts.
+        $user = User::factory()->create();
+        $song = Song::create([
+            'song_code' => 'SONG-COLS001',
+            'user_id' => $user->id,
+            'track_title' => 'Column Song',
+            'submission_count' => 3,
+        ]);
+        SongSubmission::create([
+            'song_id' => $song->id,
+            'track_title' => 'Column Song',
+            'payload' => ['artists' => [
+                ['name' => 'First Artist'],
+                ['name' => 'Second Artist'],
+            ]],
+            'created_by' => $user->id,
+        ]);
+        SongSubmission::create([
+            'song_id' => $song->id,
+            'track_title' => 'Column Song',
+            'payload' => ['artists' => [['name' => 'Third Artist']]],
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/songs')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('songs.data.0.artists', 'First Artist, Second Artist, Third Artist')
+                ->where('songs.data.0.created_by', $user->name)
+                ->missing('songs.data.0.submission_count')
+            );
+    }
+
+    public function test_index_search_is_server_side_across_pages(): void
+    {
+        // The filter must match songs beyond the current page (millions of
+        // records: client-side filtering only sees the visible slice).
+        $user = User::factory()->create();
+        foreach (range(1, 16) as $i) {
+            Song::create([
+                'song_code' => sprintf('SONG-SEARCH%02d', $i),
+                'track_title' => $i === 16 ? 'Needle In Haystack' : "Filler Song $i",
+                'submission_count' => 1,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get('/songs?q=needle')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('songs.total', 1)
+                ->where('songs.data.0.track_title', 'Needle In Haystack')
+                ->where('q', 'needle')
             );
     }
 

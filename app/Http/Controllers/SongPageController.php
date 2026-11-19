@@ -15,19 +15,61 @@ class SongPageController extends Controller
 {
     public function index(Request $request): Response
     {
+        $q = trim((string) $request->query('q', ''));
+
         return Inertia::render('songs/Index', [
+            // Spec: server-side filter + paginator so the list scales to
+            // millions of rows (client-side filtering only sees one page).
             'songs' => Song::query()
                 ->visibleTo($request->user())
+                ->when($q !== '', function ($query) use ($q) {
+                    $like = '%'.$q.'%';
+                    $query->where(function ($query) use ($like) {
+                        $query->where('song_code', 'like', $like)
+                            ->orWhere('track_title', 'like', $like);
+                    });
+                })
+                ->with([
+                    'submissions' => fn ($q) => $q
+                        ->orderBy('id')
+                        ->select(['id', 'song_id', 'created_by', 'payload'])
+                        ->with('createdBy'),
+                ])
                 ->orderByDesc('updated_at')
                 ->paginate(15)
                 ->withQueryString()
-                ->through(fn (Song $song) => [
-                    'id' => $song->id,
-                    'song_code' => $song->song_code,
-                    'track_title' => $song->track_title,
-                    'submission_count' => $song->submission_count,
-                    'updated_at' => $song->updated_at?->toIso8601String(),
-                ]),
+                ->through(function (Song $song) {
+                    // Artists: the union across every submit (the Versions
+                    // column is gone — spec: no version wording).
+                    $artistNames = [];
+                    foreach ($song->submissions as $index => $submission) {
+                        foreach (($submission->payload['artists'] ?? []) as $artist) {
+                            if (is_array($artist) && ! empty($artist['name'])) {
+                                $artistNames[(string) $artist['name']] = true;
+                            }
+                        }
+                    }
+                    if ($artistNames === [] && $song->artist_emails) {
+                        foreach (explode(',', trim((string) $song->artist_emails, ',')) as $email) {
+                            if ($email !== '') {
+                                $artistNames[$email] = true;
+                            }
+                        }
+                    }
+
+                    return [
+                        'id' => $song->id,
+                        'song_code' => $song->song_code,
+                        'track_title' => $song->track_title,
+                        'artists' => implode(', ', array_keys($artistNames)) ?: '—',
+                        // Created by = whoever sent the track's first submit.
+                        'created_by' => $song->submissions->first()?->createdBy?->name
+                            ?? $song->submissions->first()?->createdBy?->email
+                            ?? '—',
+                        'updated_at' => $song->updated_at?->toIso8601String(),
+                    ];
+                }),
+            'q' => $q,
         ]);
     }
 
@@ -45,7 +87,6 @@ class SongPageController extends Controller
                 'id' => $song->id,
                 'song_code' => $song->song_code,
                 'track_title' => $song->track_title,
-                'submission_count' => $song->submission_count,
                 'updated_at' => $song->updated_at?->toIso8601String(),
             ],
             'submissions' => $song->submissions->values()->map(fn ($s) => [

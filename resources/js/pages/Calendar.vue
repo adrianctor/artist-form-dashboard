@@ -9,7 +9,6 @@ type DaySubmission = {
     id: number;
     song_code: string;
     track_title: string;
-    submission_count: number;
     created_at: string;
 };
 
@@ -233,10 +232,6 @@ function goToPage(page: number): void {
                             <span class="font-mono">{{ submission.song_code }}</span>
                         </span>
                     </div>
-                    <span class="shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {{ submission.submission_count }}
-                        {{ submission.submission_count === 1 ? 'version' : 'versions' }}
-                    </span>
                 </li>
             </ul>
 

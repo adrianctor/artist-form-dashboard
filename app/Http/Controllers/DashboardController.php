@@ -34,12 +34,34 @@ class DashboardController extends Controller
                 ->map(fn (Song $song) => [
                     'song_code' => $song->song_code,
                     'track_title' => $song->track_title,
-                    'submission_count' => $song->submission_count,
                     'updated_at' => $song->updated_at?->toIso8601String(),
                 ]),
             // Submissions per day for the last 30 days (ECharts bar/line)
             'submissionsDaily' => $this->submissionsDaily(),
+            // Latest submits (spec: Submission activity gets real content)
+            'recentSubmissions' => $this->recentSubmissions($request),
         ]);
+    }
+
+    /**
+     * @return array<int, array{id: int, song_code: string, track_title: string, created_by: string, created_at: string|null}>
+     */
+    private function recentSubmissions(Request $request): array
+    {
+        return SongSubmission::query()
+            ->whereIn('song_id', Song::visibleTo($request->user())->select('id'))
+            ->with(['createdBy', 'song:id,song_code,track_title'])
+            ->latest('id')
+            ->limit(10)
+            ->get()
+            ->map(fn (SongSubmission $submission) => [
+                'id' => $submission->id,
+                'song_code' => $submission->song->song_code,
+                'track_title' => $submission->track_title ?? $submission->song->track_title,
+                'created_by' => $submission->createdBy?->name ?? '—',
+                'created_at' => $submission->created_at?->toIso8601String(),
+            ])
+            ->all();
     }
 
     /** @return array<string, int> */

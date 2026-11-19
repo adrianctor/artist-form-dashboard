@@ -55,7 +55,6 @@ class CalendarController extends Controller
                     'song_submissions.id as submission_id',
                     'songs.song_code',
                     'songs.track_title',
-                    'songs.submission_count',
                     'song_submissions.created_at',
                 ])
                 ->orderBy('song_submissions.created_at')
@@ -66,7 +65,6 @@ class CalendarController extends Controller
                     'id' => $row->submission_id,
                     'song_code' => $row->song_code,
                     'track_title' => $row->track_title,
-                    'submission_count' => $row->submission_count,
                     'created_at' => Carbon::parse($row->created_at)->toIso8601String(),
                 ]);
             }
