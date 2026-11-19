@@ -1,5 +1,10 @@
 # Deploy — Hostinger (archivos, sin VPS)
 
+> **⚠️ Flujo nuevo (recomendado)**: deploy automático a `artist.sunsetgathering.com`
+> vía GitHub Actions → ver [`docs/DEPLOY-GITHUB.md`](docs/DEPLOY-GITHUB.md).
+> Este documento queda como referencia del **deploy manual legacy**
+> (subdirectorio `/administracion/` + base compartida con WordPress).
+
 Producción: `https://artist.sunsetgathering.com/administracion/` (WordPress en la raíz del mismo dominio, Laravel en subdirectorio). Misma base MySQL que WordPress → **todas las tablas Laravel llevan prefijo `dash_`** (ya configurado en `.env`).
 
 ## 1. Build una sola vez
