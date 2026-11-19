@@ -76,6 +76,28 @@ class SongSubmissionService
     }
 
     /**
+     * Recompute songs.artist_emails from EVERY submit of the song (spec S11:
+     * after an edit or a delete the union must match reality).
+     */
+    public function recomputeArtistEmails(Song $song): void
+    {
+        $emails = [];
+
+        foreach ($song->submissions()->pluck('payload') as $payload) {
+            foreach (array_column($payload['artists'] ?? [], 'email') as $email) {
+                $email = strtolower(trim((string) $email));
+                if ($email !== '') {
+                    $emails[$email] = true;
+                }
+            }
+        }
+
+        $song->update([
+            'artist_emails' => $emails === [] ? null : ','.implode(',', array_keys($emails)).',',
+        ]);
+    }
+
+    /**
      * Union of the existing ",email," list with the new submit's emails.
      *
      * @param  array<int, string>  $newEmails

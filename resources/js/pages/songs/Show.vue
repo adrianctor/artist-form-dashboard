@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import songRoutes from '@/routes/songs';
 
@@ -75,6 +76,20 @@ function formatDate(value: string | null): string {
     }).format(new Date(value));
 }
 
+// Spec S11: only the submit's creator gets these actions (server enforces
+// the same rule — 403 for artists who can merely view it, 404 for strangers).
+function goEdit(submission: Submission): void {
+    router.visit(`/submissions/${submission.id}/edit`);
+}
+
+function confirmDelete(submission: Submission): void {
+    if (!window.confirm('Delete this submission? This cannot be undone.')) {
+        return;
+    }
+
+    router.delete(`/submissions/${submission.id}`, { preserveScroll: true });
+}
+
 // Release fields only — artists are shaped on the server (spec S13).
 const payloadFields = (payload: SongPayload) =>
     Object.entries(payload).filter(
@@ -139,7 +154,29 @@ defineOptions({
                                     </template>
                                 </p>
                             </div>
-                            <span aria-hidden="true" class="shrink-0 text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+                            <span class="flex shrink-0 items-center gap-2">
+                                <template v-if="submission.editable">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        data-test="edit-submission"
+                                        @click.prevent.stop="goEdit(submission)"
+                                    >
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="destructive"
+                                        data-test="delete-submission"
+                                        @click.prevent.stop="confirmDelete(submission)"
+                                    >
+                                        Delete
+                                    </Button>
+                                </template>
+                                <span aria-hidden="true" class="text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+                            </span>
                         </summary>
                         <CardContent class="border-t pt-6">
                             <dl v-if="payloadFields(submission.payload).length" class="grid gap-x-8 gap-y-5 sm:grid-cols-2">

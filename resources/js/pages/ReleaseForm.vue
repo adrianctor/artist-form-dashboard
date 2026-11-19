@@ -65,10 +65,21 @@ const LINK_FIELDS = [
     { key: 'website', label: 'Website Link', core: false },
 ] as const;
 
+// Spec S11: when set, the page edits an existing submit instead of
+// creating a new one (prefilled, no disclaimer, PATCH on submit).
+const props = withDefaults(
+    defineProps<{
+        editSubmission?: { id: number; payload: Record<string, unknown> } | null;
+    }>(),
+    { editSubmission: null },
+);
+
+const isEdit = computed(() => props.editSubmission !== null);
+
 const page = usePage();
 const currentStep = ref(0);
 const submitting = ref(false);
-const locked = ref(true);
+const locked = ref(!isEdit.value);
 
 // Spec S5: server validation errors (422 -> redirect back) must be visible
 // on the form — never fail silently.
@@ -98,7 +109,7 @@ const release = reactive({
     original_track_credits: '',
 });
 
-const artistCount = ref<'' | '1' | '2' | '3' | '4'>('');
+const artistCount = ref<string>('');
 const artists = ref<ArtistBlock[]>([]);
 
 const coverFieldsVisible = computed(() => release.is_cover === 'Yes');
@@ -295,15 +306,18 @@ async function submitForm() {
     if (submitting.value) return;
     submitting.value = true;
     try {
-        router.post(
-            releaseForm.url(),
-            buildPayload(),
-            {
-                onFinish: () => {
-                    submitting.value = false;
-                },
+        const options = {
+            onFinish: () => {
+                submitting.value = false;
             },
-        );
+        };
+
+        if (props.editSubmission) {
+            // Spec S11: edit in place — never creates a new version.
+            router.patch(`/submissions/${props.editSubmission.id}`, buildPayload(), options);
+        } else {
+            router.post(releaseForm.url(), buildPayload(), options);
+        }
     } catch {
         submitting.value = false;
         window.alert('Submission failed.');
@@ -347,9 +361,62 @@ function buildPayload() {
     };
 }
 
+/* ---------- Edit mode: prefill from the stored payload (spec S11) ---------- */
+
+function prefillFromPayload(payload: Record<string, any>): void {
+    publishing.value = payload.publishing === 'none' ? 'none' : 'afrodise';
+    release.track_title = String(payload.track_title ?? '');
+    release.cover_artwork_creative_direction = String(
+        payload.cover_artwork_creative_direction ?? '',
+    );
+    release.audio_link = String(payload.audio_link ?? '');
+    release.genre = String(payload.genre ?? '');
+    release.country_recording = String(payload.country_recording ?? '');
+    release.audio_style = (payload.audio_style as 'Vocal' | 'Instrumental') || '';
+    release.writers = String(payload.writers ?? '');
+    release.explicit_content =
+        (payload.explicit_content as 'Yes' | 'No') || '';
+    release.is_cover = (payload.is_cover as 'Yes' | 'No') || '';
+    release.original_song_link = String(payload.original_song_link ?? '');
+    release.original_track_credits = String(
+        payload.original_track_credits ?? '',
+    );
+
+    const list = Array.isArray(payload.artists) ? payload.artists : [];
+    artistCount.value = list.length > 0 ? String(list.length) : '';
+    artists.value = list.map((raw: Record<string, any>) => {
+        const block = emptyArtist();
+        block.searchQuery = String(raw.name ?? '');
+        block.name = String(raw.name ?? '');
+        block.realName = String(raw.real_name ?? '');
+        block.email = String(raw.email ?? '');
+        block.role = String(raw.role ?? '');
+        block.country = String(raw.country ?? '');
+        block.city = String(raw.city ?? '');
+        block.estate = String(raw.estate ?? '');
+        block.photo = String(raw.photo ?? '');
+        block.bio = String(raw.bio ?? '');
+        block.status =
+            raw.status === 'New Artist' || raw.status === 'Existing Artist'
+                ? raw.status
+                : '';
+        if (raw.links && typeof raw.links === 'object') {
+            for (const field of LINK_FIELDS) {
+                block.links[field.key] = String(raw.links[field.key] ?? '');
+            }
+        }
+        return block;
+    });
+}
+
 /* ---------- Disclaimer (same content as the original form) ---------- */
 
 onMounted(() => {
+    if (props.editSubmission) {
+        prefillFromPayload(props.editSubmission.payload);
+        return;
+    }
+
     void Swal.fire({
         title: 'Important Information',
         width: 900,
@@ -927,9 +994,13 @@ onMounted(() => {
                     >
                         {{
                             submitting
-                                ? 'Sending...'
+                                ? isEdit
+                                    ? 'Saving...'
+                                    : 'Sending...'
                                 : currentStep === 2
-                                  ? 'Send Form'
+                                  ? isEdit
+                                        ? 'Save changes'
+                                        : 'Send Form'
                                   : 'Next'
                         }}
                     </button>

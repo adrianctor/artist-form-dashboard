@@ -121,7 +121,7 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 | T4 | S7 | inline | done | (commit) |
 | T5 | S8, S9 | inline | done | (ver L6) |
 | T6 | S10, S13 | inline | done | (commit) |
-| T7 | S11 | inline | pending | — |
+| T7 | S11 | inline | done | (commit) |
 | T8 | S12, S13 | inline | pending | — |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
@@ -185,3 +185,15 @@ T5 quedó verificado en el turno anterior (Mailpit: UI 200 + API con mensajes; E
 3. **S11 (data)**: cada submission lleva `editable = (created_by !== null && created_by === user.id)` — los botones vienen en T7.
 4. Gotcha de test: `AssertableInertia::where` pasa una **Collection** al closure (no array) — usar `pluck()/contains()`.
 5. Tests: `SongsPageTest` 6/6 (paridad de payload + shape de links: name único, sin fila "Links", Spotify pair exacto). Suite **152/789**, vue-tsc 0, build OK.
+
+### L8 — T7: editar/borrar submit — solo el que lo envió (2026-11-19)
+
+1. **Rutas** (grupo auth/verified/profile.complete de Songs): `GET /submissions/{id}/edit`, `PATCH /submissions/{id}`, `DELETE /submissions/{id}`.
+2. **Autorización estricta** (`findEditableSubmission`): primero el scope `visibleTo` (desconocido → **404**, no revela existencia), luego `created_by === user.id` (artista que solo ve → **403**). **Sin bypass de admin** — "editar y borrar solo al que envió el submit" (spec S11).
+3. **`validatedRelease()`** extraído de `store()` (misma validación + regla condicional de links + normalización de cover) → lo comparten store y update.
+4. **update**: actualiza `payload` + `track_title` de la canción (nunca crea versiones) + `recomputeArtistEmails` (unión de TODOS los submits de la canción) → redirect a Show + toast.
+5. **destroy**: borra el submission; si era el último → borra la canción (redirect a Songs); si no → recalcula `submission_count` + `artist_emails` → redirect a Show. Confirm con `window.confirm`.
+6. **`SongSubmissionService::recomputeArtistEmails`** nuevo (usado por update y destroy).
+7. **UI**: botones **Edit** (outline) y **Delete** (destructive) por entrada del historial, solo si `editable` (server-side); `@click.prevent.stop` para no togglear el `<details>`.
+8. **`ReleaseForm.vue` modo edición**: prop `editSubmission` → prefill completo (publishing, release info, cover, artistCount, artist blocks con links), **sin disclaimer**, botón "Save changes"/"Saving...", envía `router.patch(/submissions/{id})`. `artistCount` tipado a `string` (submits de API pueden tener >4 artistas).
+9. Tests `SubmissionEditDeleteTest` (11) RED→GREEN. E2E curl: edit 200 → PATCH renombra payload+canción → DELETE última → show 404. Suite **163/834**, vue-tsc 0, build OK.
