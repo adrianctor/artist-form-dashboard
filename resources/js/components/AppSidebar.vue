@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { CalendarDays, LayoutGrid, Music, Users } from '@lucide/vue';
+import { CalendarDays, LayoutGrid, Music, User, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,7 +15,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { calendar, dashboard, releaseForm } from '@/routes';
+import { calendar, dashboard, myProfile, releaseForm } from '@/routes';
 import songs from '@/routes/songs';
 import users from '@/routes/users';
 import type { NavItem } from '@/types';
@@ -43,6 +43,13 @@ const mainNavItems = computed<NavItem[]>(() => {
         {
             title: 'Music Release Form',
             href: releaseForm(),
+        },
+        // Spec S6: artist info complete/edit — main menu, right under the
+        // form (the user dropdown at the bottom was not intuitive).
+        {
+            title: 'My profile',
+            href: myProfile(),
+            icon: User,
         },
     ];
 

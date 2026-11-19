@@ -156,3 +156,9 @@ Los 9 tasks (T1-T9) completados en 9 commits sobre `feat/dashboard-mvp` (38de594
 2. **Label EN de la opción 2 de Publishing** (S3): asumido `I don't have this` para "No cuento con esto" — confirma o manda el texto exacto.
 
 **Fuera de alcance anotado en specs:** campo Catalogo en el form (S7 "pendiente" — hoy el form no lo muestra ni lo llena; el sistema auto-genera `SONG-…`).
+
+### L11 — My profile al menú principal (2026-11-19, corrección del usuario)
+
+> "el item de my profile debería ir debajo de Music Release Form por que abajo no es intuitivo. corrigelo"
+
+Movido del dropdown `UserMenuContent` (footer del sidebar) a `mainNavItems` de `AppSidebar`, justo debajo de **Music Release Form** (icono User, ruta `myProfile()`). Dropdown queda solo con Settings + Log out. Suite **126/555**, vue-tsc 0, build OK.
