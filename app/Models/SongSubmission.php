@@ -20,6 +20,7 @@ class SongSubmission extends Model
         'song_id',
         'payload',
         'track_title',
+        'created_by',
     ];
 
     protected function casts(): array
@@ -32,5 +33,11 @@ class SongSubmission extends Model
     public function song(): BelongsTo
     {
         return $this->belongsTo(Song::class);
+    }
+
+    /** User that hit submit for this version (spec S6). */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

@@ -92,7 +92,7 @@ class ReleaseFormController extends Controller
             $validated['original_track_credits'] = '';
         }
 
-        $this->submissions->submit($validated);
+        $this->submissions->submit($validated, null, $request->user()?->id);
 
         // Spec S2: system email replaces EmailJS (same recipients). The
         // mailable's envelope carries to/cc/replyTo.

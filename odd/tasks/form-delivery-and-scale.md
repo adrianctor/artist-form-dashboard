@@ -87,7 +87,7 @@ Auditado:
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
 | T1 | S5, S2, S1 | inline | done | (commit) |
-| T2 | S6 | inline | pending | — |
+| T2 | S6 | inline | done | (commit) |
 | T3 | S3, S4, S2 | inline | pending | — |
 | T4 | S7 | inline | pending | — |
 | T5 | S8, S9 | inline | pending | — |
@@ -114,3 +114,12 @@ L1 — 2026-11-19, petición original del usuario (verbatim):
 2. **S1**: icono `FileMusic` en el item Music Release Form del sidebar.
 3. **S2 (sidebar+controller)**: Calendar sale del bloque `isAdmin` del sidebar (ahora para todos, junto a Users solo-admin); `CalendarController` sin `abort_unless admin` + `visibleTo(user)` (user ve las suyas, admin todo).
 4. Tests: `ReleaseFormSubmitTest` redirects→calendar (3), test de aterrizaje en Calendar, test success-flag eliminado; `CalendarTest`: non-admin ACCede (200) + solo-los-suyos en el calendario. Suite **127/574**, vue-tsc 0, build OK.
+
+### L3 — T2: creador + artistas ven el track, historial con "Created by" (2026-11-19)
+
+1. **Migración** `2026_11_19_000002_add_creator_and_scale_to_songs`: `song_submissions.created_by` (FK users nullOnDelete), `songs.artist_emails` (text `,email,` lowercase) **+ backfill chunked** desde los submissions existentes, e **índices de escala** (S4/S9): `songs(created_at)`, `songs(updated_at)`, `song_submissions(created_at)`, `song_submissions(created_by)`.
+2. **`SongSubmissionService`**: firma `submit($validated, $songCode, $createdBy)` — setea `created_by` en cada versión y recalcula `songs.artist_emails` (unión con lo existente en cada append). Controllers (form + API) pasan `$request->user()?->id`.
+3. **`scopeVisibleTo`** (S6): admin todo; user = `user_id = me` OR existe submit con `created_by = me` OR `artist_emails LIKE '%,mi-email,%'` — cubre owner, **creador** y **todos** los artistas agregados con cuenta (el gap real: solo el primer match era owner). `show()` ahora autoriza con el mismo scope (`firstOrFail` →404), sin lógica duplicada.
+4. **Show**: cada versión muestra "**Created by**: nombre" junto a la fecha (mapeo `created_by` + eager load `createdBy`).
+5. **Gotcha**: `artist_emails` tenía que entrar al `$fillable` de Song (mass assignment la descartaba → LIKE nunca matcheaba →404 en el test).
+6. Tests `CreatorVisibilityTest` (5) RED→GREEN: creador sin email-match ve su song; segundo artista con cuenta la ve; desconocido →404/0; historial incluye created_by; merge de emails en append. Suite **132/613**, vue-tsc 0, build OK.

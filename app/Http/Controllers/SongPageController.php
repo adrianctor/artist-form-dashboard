@@ -33,15 +33,12 @@ class SongPageController extends Controller
 
     public function show(\Illuminate\Http\Request $request, string $songCode): Response
     {
-        $song = Song::where('song_code', $songCode)
-            ->with(['submissions' => fn ($q) => $q->orderByDesc('id')])
+        // Visibility via the same scope as the index (spec S6): owner,
+        // creator of any submit, or any artist email — admins see all.
+        $song = Song::visibleTo($request->user())
+            ->where('song_code', $songCode)
+            ->with(['submissions' => fn ($q) => $q->orderByDesc('id')->with('createdBy')])
             ->firstOrFail();
-
-        // Users can only open their own songs; admins can open any (spec S5).
-        abort_if(
-            ! $request->user()->hasRole('admin') && $song->user_id !== $request->user()->id,
-            404
-        );
 
         return Inertia::render('songs/Show', [
             'song' => [
@@ -57,6 +54,8 @@ class SongPageController extends Controller
                 'track_title' => $s->track_title,
                 'payload' => $s->payload,
                 'created_at' => $s->created_at?->toIso8601String(),
+                // Spec S6: the history must say who created this submit.
+                'created_by' => $s->createdBy?->name ?? $s->createdBy?->email,
             ]),
         ]);
     }

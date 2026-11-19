@@ -22,6 +22,7 @@ interface Submission {
     track_title: string | null;
     payload: SongPayload;
     created_at: string | null;
+    created_by: string | null;
 }
 
 interface ArtistDetails {
@@ -172,7 +173,13 @@ defineOptions({
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                             <div class="min-w-0">
                                 <p class="font-medium">Version {{ submission.version }} · {{ submission.track_title || song.track_title || 'Untitled song' }}</p>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(submission.created_at) }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    {{ formatDate(submission.created_at) }}
+                                    <!-- Spec S6: the history says who created the submit. -->
+                                    <template v-if="submission.created_by">
+                                        · Created by <span class="font-medium text-foreground">{{ submission.created_by }}</span>
+                                    </template>
+                                </p>
                             </div>
                             <span aria-hidden="true" class="shrink-0 text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
                         </summary>

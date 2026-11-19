@@ -57,7 +57,7 @@ class SongController extends Controller
         $songCode = $validated['song_code'] ?? null;
         unset($validated['song_code']);
 
-        $result = $this->submissions->submit($validated, $songCode);
+        $result = $this->submissions->submit($validated, $songCode, $request->user()?->id);
 
         return response()->json([
             'song_code' => $result['song']->song_code,
