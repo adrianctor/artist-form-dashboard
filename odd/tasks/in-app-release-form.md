@@ -72,12 +72,12 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T1 | S5 | inline | done | 38de594 |
 | T2 | S5 | inline | done | 38de594 |
 | T3 | S5, S6 | inline | done | 22a64ea |
-| T4 | S4 | inline | done | (commit) |
-| T5 | S1, S3, S4 | inline | done | (commit) |
-| T6 | S1, S3 | inline | done | (commit) |
-| T7 | S2 | inline | done | (commit) |
-| T8 | S7 | inline | done | (commit) |
-| T9 | S1, S7 | inline | done | (commit) |
+| T4 | S4 | inline | done | fc70a5b |
+| T5 | S1, S3, S4 | inline | done | 7eb9782 |
+| T6 | S1, S3 | inline | done | e0d3f4b |
+| T7 | S2 | inline | done | 3a60a44 |
+| T8 | S7 | inline | done | 0fcceec |
+| T9 | S1, S7 | inline | done | 885ac79 |
 
 - T1: migración `artist_profiles` + modelo + relación `User::artistProfile` + `hasCompleteArtistProfile()` + tests de completitud (RED→GREEN).
 - T2: middleware `EnsureArtistProfileComplete` + alias + aplicación en todos los grupos authed (web/songs/users/calendar/settings/release-form) + tests (user incompleto → redirect my-profile; completo → pasa; admin → pasa).
@@ -146,3 +146,13 @@ Labels visibles renombrados (spec S7): columna del índice (`header: 'Catalogo'`
 ### L9 — T9: limpieza FORM_URL + docs (2026-11-19)
 
 El form interno (T5) dejó sin consumidores al link externo: eliminados `form_url` de `config/app.php`, el share `formUrl` de `HandleInertiaRequests`, `formUrl?` de `global.d.ts` y `FORM_URL` de `.env`/`.env.example`. `DashboardTest` ahora pina que `route('release-form')` es accesible desde el dashboard (spec S1); test redundante de `ReleaseFormPageTest` eliminado. `DEPLOY.md`: §3 sin FORM_URL, §4 sin token Elementor, §5 reescrito ("Form interno — sin WordPress"), §8 verificación actualizada. Suite: **126 tests / 555 assertions**, vue-tsc 0, build OK.
+
+### L10 — Cierre de la feature (2026-11-19)
+
+Los 9 tasks (T1-T9) completados en 9 commits sobre `feat/dashboard-mvp` (38de594..885ac79). Verificación final: **126 tests / 555 assertions**, `vue-tsc` 0 errores, `npm build` OK, E2E (login → ReleaseForm/MyProfile/artist-search 200).
+
+**Pendiente del usuario (no bloquea):**
+1. **Template del email** (S2): el cuerpo actual es un placeholder estructurado con todos los campos — cuando mandes el template que tenías (EmailJS), lo enchufamos en `ReleaseFormSubmitted::content()`.
+2. **Label EN de la opción 2 de Publishing** (S3): asumido `I don't have this` para "No cuento con esto" — confirma o manda el texto exacto.
+
+**Fuera de alcance anotado en specs:** campo Catalogo en el form (S7 "pendiente" — hoy el form no lo muestra ni lo llena; el sistema auto-genera `SONG-…`).
