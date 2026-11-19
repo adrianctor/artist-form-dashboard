@@ -413,7 +413,7 @@ onMounted(() => {
                 <input type="checkbox" name="botcheck" style="display: none" />
 
                 <!-- STEP 0: Release Info -->
-                <div v-show="currentStep === 0" class="step active">
+                <div v-show="currentStep === 0" :class="['step', { active: currentStep === 0 }]">
                     <h3>Release Info</h3>
                     <div class="grid">
                         <div class="group">
@@ -537,7 +537,7 @@ onMounted(() => {
                 </div>
 
                 <!-- STEP 1: Cover Information -->
-                <div v-show="currentStep === 1" class="step">
+                <div v-show="currentStep === 1" :class="['step', { active: currentStep === 1 }]">
                     <h3>Cover Information</h3>
                     <div class="group">
                         <label>Is this song a cover? *</label>
@@ -588,7 +588,7 @@ onMounted(() => {
                 </div>
 
                 <!-- STEP 2: Artists -->
-                <div v-show="currentStep === 2" class="step">
+                <div v-show="currentStep === 2" :class="['step', { active: currentStep === 2 }]">
                     <h3>Artists</h3>
 
                     <!-- Spec S3: Publishing — before the artist count. -->

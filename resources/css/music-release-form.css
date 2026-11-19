@@ -130,13 +130,22 @@
 
 #musicReleaseForm h2{
     margin:0 0 10px;
-    font-size:32px;
-    font-weight:700;
-    letter-spacing:.5px;
+    /* Original look = sunsetgathering custom-style.css wrapping the WP form:
+       h2 36px/36 Quicksand 300 uppercase. */
+    font-size:36px;
+    line-height:36px;
+    font-weight:300;
+    letter-spacing:2px;
+    text-transform:uppercase;
 }
 
 #musicReleaseForm h3{
     margin-bottom:25px;
+    /* custom-style.css: h3 48px/48 Quicksand 400 uppercase. */
+    font-size:48px;
+    line-height:48px;
+    font-weight:400;
+    text-transform:uppercase;
 }
 
 #musicReleaseForm p{

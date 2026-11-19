@@ -183,3 +183,15 @@ El CSS portado traía `background:#f3f7ff` + `color:#000` (los campos blancos de
 - `select:required:invalid { color:#a1a1aa }` (hint "Select" hasta elegir).
 - Guard `:-webkit-autofill` (Chrome repintaba campos blancos con autofill del email).
 Verificación: build OK, CSS construido sin `#f3f7ff` y con `var(--background,#000)` + `#a1a1aa` (grep), suite **126/555**, vue-tsc 0. Sin runner de tests de CSS → check estructural del bundle.
+
+### L14 — Paso 2 vacío + tipografía del original (2026-11-19)
+
+> "por que el segundo paso del form se ve así y no como el original?" (2 capturas)
+
+**Causa 1 — bug (contenido invisible)**: el CSS del form muestra/oculta pasos por CLASE `.active` (`.step{display:none}` / `.step.active{display:block}`) — el JS original hacía `classList.add/remove('active')` en `showStep()`. El port usó `v-show` sin agregar la clase: los pasos 1/2 nunca tenían `active` → el stylesheet los ocultaba siempre (solo el paso 0 tenía `active` hardcodeado). Resultado: paso 2 = header + botones sin contenido. Fix en `ReleaseForm.vue`: `:class="['step', { active: currentStep === N }]"` en los 3 steps (v-show queda como refuerzo).
+
+**Causa 2 — tipografía**: las mayúsculas/tamaños del original NO venían del HTML del form sino del customizer de WordPress (`sunsetgathering.com/wp-content/uploads/css/custom-style.css`, verificado por fetch): `h2 → 36px/36 Quicksand 300 uppercase`, `h3 → 48px/48 Quicksand 400 uppercase`. El HTML portado solo tenía `h2 32px/700` y `h3` sin tamaño (Tailwind preflight lo dejaba en texto normal). Fix en `music-release-form.css`: reglas con los valores originales.
+
+**Nota**: botones/progress siguen en el token del branding (#2952ff/#5b7fff); el original usaba #4f46e5 (violeta) — revertir solo si el usuario lo pide.
+
+Verificación: vue-tsc 0, build OK, bundle con los 3 `class:['step',{active:...}]` + `text-transform:uppercase` + `font-size:48px`, suite **126/555**.
