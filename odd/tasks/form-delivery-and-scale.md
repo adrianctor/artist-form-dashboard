@@ -120,9 +120,10 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 | T3 | S3, S4, S2 | inline | done | (commit) |
 | T4 | S7 | inline | done | (commit) |
 | T5 | S8, S9 | inline | done | (ver L6) |
-| T6 | S10, S13 | inline | done | (commit) |
-| T7 | S11 | inline | done | (commit) |
-| T8 | S12, S13 | inline | done | (commit) |
+| T6 | S10, S13 | inline | done | 67c6a39 |
+| T7 | S11 | inline | done | 46b616a |
+| T8 | S12, S13 | inline | done | 8678955 |
+| T9 | verificación final | inline | done | (commit) |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
 - T2: migración (`song_submissions.created_by`, `songs.artist_emails` + backfill + índices de S4/S9) + `SongSubmissionService` (createdBy + artist_emails) + `scopeVisibleTo` ampliado + `show()` vía scope + "Created by" en Show.vue + tests nuevos (creador ve, segundo artista ve, desconocido no, Show incluye created_by).
@@ -203,3 +204,15 @@ T5 quedó verificado en el turno anterior (Mailpit: UI 200 + API con mensajes; E
 1. **`ReleaseFormSubmitted` rediseñado** (S12): todo inline con tables (compat email) — fondo `#000000`, tarjeta `#0a0a0a` borde sutil radio20, título uppercase letter-spacing3px, "New submission · fecha", labels de campo uppercase11px `#a1a1aa`, valores blancos14px, footer de paridad con el historial. Envelope sin cambios.
 2. **S13 en el correo**: links de plataforma como filas "Label — ancla" (`#5b7fff` underline, word-break) y cualquier valor-URL del release (audio_link, photo...) también como ancla — nunca JSON. Artistas en tarjetas con heading = nombre real (paridad con Show).
 3. **Tests**: `email_is_styled_like_the_page` (#000000/#0a0a0a/uppercase/#a1a1aa) + `email_renders_artist_links_as_anchors_never_json` (href + "Spotify" + sin `{"spotify"`). Test de paridad actualizado: el heading es el nombre real ("Aaron Sevilla"/"Badrops"), no "Artist N". Suite completa verificada en T9.
+
+### L10 — T9: verificación final + cierre (2026-11-19)
+
+**E2E del correo real (Mailpit)**: POST /release-form → redirect `/calendar` ✓; el mensaje llega con **todos los markers verificados**: `background-color:#000000` (fondo), `background-color:#0a0a0a` (tarjeta), `text-transform:uppercase`, `color:#a1a1aa` (labels), ancla `href="https://open.spotify.com/artist/abc"` del link del artista, y **sin JSON** (`{"spotify"` ausente).
+
+**Estado final de la feature**: **165 tests / 840 assertions**, `vue-tsc` 0, `npm build` OK. Todos los tasks T1-T9 completados:
+- S10: sin "Version N" en la info de un submit (badge = "N submissions").
+- S11: editar/borrar solo el creador (`created_by`),404/403 según visibilidad, sin bypass de admin; edit reutiliza ReleaseForm; la canción muere con su último submit.
+- S12: correo con el estilo de la página (fondo #000, tarjeta #0a0a0a, labels uppercase #a1a1aa).
+- S13: links de artistas como anclas en Show Y en el correo — nunca JSON.
+
+**Nota**: `AssertableInertia::where` entrega una `Collection` a los closures (no array) — usar `pluck()/contains()` en tests.
