@@ -77,7 +77,7 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T6 | S1, S3 | inline | done | (commit) |
 | T7 | S2 | inline | done | (commit) |
 | T8 | S7 | inline | done | (commit) |
-| T9 | S7 | inline | pending | — |
+| T9 | S1, S7 | inline | done | (commit) |
 
 - T1: migración `artist_profiles` + modelo + relación `User::artistProfile` + `hasCompleteArtistProfile()` + tests de completitud (RED→GREEN).
 - T2: middleware `EnsureArtistProfileComplete` + alias + aplicación en todos los grupos authed (web/songs/users/calendar/settings/release-form) + tests (user incompleto → redirect my-profile; completo → pasa; admin → pasa).
@@ -142,3 +142,7 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 ### L8 — T8: rename Song Code → Catalogo (2026-11-19)
 
 Labels visibles renombrados (spec S7): columna del índice (`header: 'Catalogo'`), cabecera del show ("Catalogo" + valor mono), lista reciente del Dashboard (`Catalogo · SONG-…`), detalle del calendario. El identificador sigue auto-generándose (`SONG-`+8 hex) — el form no lo muestra ni lo llena (pendiente futuro). Sin tests que pinnearan el texto viejo; suite **127/564**, vue-tsc 0, build OK.
+
+### L9 — T9: limpieza FORM_URL + docs (2026-11-19)
+
+El form interno (T5) dejó sin consumidores al link externo: eliminados `form_url` de `config/app.php`, el share `formUrl` de `HandleInertiaRequests`, `formUrl?` de `global.d.ts` y `FORM_URL` de `.env`/`.env.example`. `DashboardTest` ahora pina que `route('release-form')` es accesible desde el dashboard (spec S1); test redundante de `ReleaseFormPageTest` eliminado. `DEPLOY.md`: §3 sin FORM_URL, §4 sin token Elementor, §5 reescrito ("Form interno — sin WordPress"), §8 verificación actualizada. Suite: **126 tests / 555 assertions**, vue-tsc 0, build OK.

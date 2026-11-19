@@ -25,15 +25,16 @@ class DashboardTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_dashboard_shares_the_music_form_url_for_the_sidebar_menu(): void
+    public function test_music_release_form_route_is_reachable_from_the_dashboard(): void
     {
+        // Spec S1: the form is internal now — no FORM_URL share needed.
         $user = User::factory()->create();
-        $this->actingAs($user);
 
-        $this->get(route('dashboard'))
+        $this->actingAs($user)
+            ->get(route('dashboard'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('Dashboard')
-                ->where('formUrl', config('app.form_url')));
+            ->assertInertia(fn ($page) => $page->component('Dashboard'));
+
+        $this->actingAs($user)->get(route('release-form'))->assertOk();
     }
 }

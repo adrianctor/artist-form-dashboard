@@ -31,14 +31,4 @@ class ReleaseFormPageTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('ReleaseForm'));
     }
 
-    public function test_sidebar_item_points_to_the_internal_form_route(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user)
-            ->get('/dashboard')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Dashboard')
-                ->has('formUrl')); // still shared; sidebar uses route() now
-    }
 }

@@ -78,10 +78,6 @@ MICROSOFT_CLIENT_ID=
 MICROSOFT_CLIENT_SECRET=
 APPLE_CLIENT_ID=
 APPLE_CLIENT_SECRET=
-
-# Página del form de Elementor (link "Music Release Form" en el sidebar).
-# Producción: slug igual al que crees en wp-admin (p.ej. /music-release-form/).
-FORM_URL=https://artist.sunsetgathering.com/music-release-form/
 ```
 
 ## 4. Migraciones (una vez, y después en cada release)
@@ -94,27 +90,19 @@ php artisan db:seed --class=RolesAndUsersSeeder --force   # crea admin@sunsetgat
 php artisan db:seed --class=DemoDataSeeder --force        # opcional: token + canciones demo
 ```
 
-**Token para el form de Elementor**: lo imprime `DemoDataSeeder` (`ELEMENTOR_FORM_TOKEN=...`) o genera uno con:
+## 5. Music Release Form (interno — sin WordPress)
 
-```bash
-php artisan tinker
->>> App\Models\User::where('email','admin@sunsetgathering.com')->first()->createToken('elementor-form')->plainTextToken
-```
+El form ya NO vive en WordPress/Elementor (spec S1): está dentro del
+dashboard en `/release-form`, con el mismo flujo de 3 steps, el disclaimer
+y las cards de ARTIST PROFILE STATUS.
 
-Pégalo en `DASHBOARD_API_TOKEN` del form (paso 5).
-
-## 5. Form de Elementor
-
-1. Edita la página con el form en WordPress → widget **HTML**.
-2. Reemplaza el contenido con `wordpress/music-release-form.html` de este repo.
-3. Arriba del `<script>`, ajusta:
-
-```js
-var DASHBOARD_API_BASE = 'https://artist.sunsetgathering.com/administracion/api/v1';
-var DASHBOARD_API_TOKEN = '1|...';   // token del paso 4
-```
-
-4. Guarda y prueba: el campo **Song Code** vacío = alta nueva (te devuelve un `SONG-…` en la pantalla de éxito); con el código = precarga y agrega una versión al historial.
+- **No hace falta** token Elementor ni widget HTML en WordPress.
+- El envío usa la sesión del dashboard (mismo pipeline de ownership por
+  email de artista) y dispara el email del sistema a
+  `info@sunsetgathering.com` (cc artistas) — reemplaza a EmailJS (spec S2).
+- Requiere perfil de artista completo (gate S5) — primero My profile.
+- El identificador interno se llama **Catalogo** (`SONG-…`); el form no lo
+  muestra ni lo llena (spec S7, pendiente).
 
 ## 6. Releases siguientes (cambios en vivo)
 
@@ -141,4 +129,5 @@ No hace falta tocar la BD de WordPress más allá de las migraciones `dash_*`.
 - `https://artist.sunsetgathering.com/administracion/login` → 200
 - Login con `admin@sunsetgathering.com` → entra al dashboard
 - `https://artist.sunsetgathering.com/administracion/api/v1/songs/SONG-DEMO0001` con Bearer token → 200
-- En el form de Elementor: enviar uno de prueba con Song Code vacío → aparece el código y aparece en el panel
+- Login → menú **Music Release Form** → `/release-form` carga (si el perfil está incompleto, redirige a **My profile** primero)
+- Enviar un release de prueba → aparece en **Songs** como **Catalogo · SONG-…** y llega el email a info@

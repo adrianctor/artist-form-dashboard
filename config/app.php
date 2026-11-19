@@ -123,17 +123,4 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Music Release Form URL
-    |--------------------------------------------------------------------------
-    |
-    | WordPress/Elementor page that hosts the release form. Exposed to the
-    | sidebar as an external link (spec: "el form como opción en el menú").
-    | Local:  http://localhost/wordpress/music-release-form/
-    | Prod:   https://artist.sunsetgathering.com/music-release-form/
-    |
-    */
-    'form_url' => env('FORM_URL', 'http://localhost/wordpress/music-release-form/'),
-
 ];
