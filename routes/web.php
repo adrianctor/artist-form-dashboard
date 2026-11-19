@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ArtistProfileController;
+use App\Http\Controllers\ArtistSearchController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,9 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     // redirect target; EnsureArtistProfileComplete lets this route through).
     Route::get('my-profile', [ArtistProfileController::class, 'show'])->name('my-profile');
     Route::patch('my-profile', [ArtistProfileController::class, 'update'])->name('my-profile.update');
+
+    // Spec S4: artist search for the release form's autofill.
+    Route::get('artist-search', [ArtistSearchController::class, 'index'])->name('artist-search');
 });
 
 require __DIR__.'/calendar.php';

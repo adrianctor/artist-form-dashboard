@@ -72,7 +72,7 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T1 | S5 | inline | done | 38de594 |
 | T2 | S5 | inline | done | 38de594 |
 | T3 | S5, S6 | inline | done | 22a64ea |
-| T4 | S6 | inline | pending | — |
+| T4 | S4 | inline | done | (commit) |
 | T5 | S4 | inline | pending | — |
 | T6 | S1 | inline | pending | — |
 | T7 | S1, S3 | inline | pending | — |
@@ -110,3 +110,7 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 3. **Menú**: item **My profile** (icono User) en `UserMenuContent.vue` debajo de Settings — lo reusan NavUser y AppHeader. Spec S6.
 4. **Gotcha vue-tsc**: `placeholder="https://..."` (con `//` + `...`) en atributos estáticos rompe el parser del template — `errors`/`processing` del `v-slot` y variables de `v-for` dejan de resolver desde ese punto (TS2304 en cadena). Fix: quitar `//`+`...` de placeholders (`"https://"` solo también falla; `"Link URL"` OK).
 5. Tests: `MyProfileTest` (6) RED→GREEN. Suite: **106 tests / 477 assertions**, `vue-tsc` 0 errores, build OK (en `afd-vite`), E2E `GET /my-profile` → `component: MyProfile`. Commit `22a64ea`.
+
+### L4 — T4: endpoint de búsqueda de artistas (2026-11-19)
+
+`GET /artist-search?q=` (`ArtistSearchController@index`): matchea `users.name`, `users.email`, `artist_profiles.artist_name/real_name` (LIKE), filtra por `hasCompleteArtistProfile()`, ordena por nombre, límite 10 (busca ×5 candidatos antes del filtro para no quedarse corto). Respuesta JSON con todos los campos para autofill (spec S4). Guest → 401 (JSON). Tests `ArtistSearchTest` (8) RED→GREEN: nombre, email, real name, incompletos excluidos, query vacía, shape, límite.
