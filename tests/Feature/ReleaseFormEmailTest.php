@@ -118,10 +118,67 @@ class ReleaseFormEmailTest extends TestCase
             return str_contains($rendered, 'Writers PARITY Marker')
                 && str_contains($rendered, 'Country PARITY Marker')
                 && str_contains($rendered, 'Genre PARITY Marker')
-                && str_contains($rendered, 'Artist 1')
-                && str_contains($rendered, 'Artist 2')
+                // The card heading is the artist's real name (parity with
+                // the history page), not a generic "Artist N".
+                && str_contains($rendered, 'Aaron Sevilla')
+                && str_contains($rendered, 'Badrops')
                 && str_contains($rendered, 'Bio') // every artist field key is rendered
                 && str_contains($rendered, 'DJ since 2015.');
+        });
+    }
+
+    public function test_email_is_styled_like_the_page(): void
+    {
+        // Spec S12: dark card, uppercase headings, gray labels — same
+        // visual language as the dashboard.
+        Mail::fake();
+
+        $this->submitForm();
+
+        Mail::assertSent(ReleaseFormSubmitted::class, function (ReleaseFormSubmitted $mail) {
+            $rendered = $mail->render();
+
+            return str_contains($rendered, 'background-color:#000000')
+                && str_contains($rendered, 'background-color:#0a0a0a')
+                && str_contains($rendered, 'text-transform:uppercase')
+                && str_contains($rendered, 'color:#a1a1aa')
+                && str_contains($rendered, 'Music Release Form');
+        });
+    }
+
+    public function test_email_renders_artist_links_as_anchors_never_json(): void
+    {
+        // Spec S13: platform links are clickable anchors with their
+        // platform label — never a JSON blob.
+        Mail::fake();
+
+        $this->submitForm([
+            'artists' => [[
+                'name' => 'Link Artist',
+                'real_name' => 'Link Artist',
+                'email' => 'first.artist@example.com',
+                'role' => 'DJ',
+                'country' => 'AR',
+                'city' => 'BA',
+                'estate' => 'CABA',
+                'photo' => 'https://x.com/p.jpg',
+                'bio' => 'DJ since 2015.',
+                'status' => 'New Artist',
+                'links' => [
+                    'spotify' => 'https://open.spotify.com/artist/xyz',
+                    'apple_music' => '',
+                ],
+            ]],
+        ]);
+
+        Mail::assertSent(ReleaseFormSubmitted::class, function (ReleaseFormSubmitted $mail) {
+            $rendered = $mail->render();
+
+            return str_contains($rendered, 'href="https://open.spotify.com/artist/xyz"')
+                && str_contains($rendered, 'Spotify')
+                && str_contains($rendered, 'Platform links')
+                && ! str_contains($rendered, '{"spotify"')
+                && ! str_contains($rendered, '&quot;spotify&quot;');
         });
     }
 

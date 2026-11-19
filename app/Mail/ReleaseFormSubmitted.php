@@ -9,12 +9,12 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Spec S2 (odd/tasks/in-app-release-form.md, T7): system email that
- * replaces EmailJS on release-form submit. Recipients mirror the original
- * EmailJS config: to info@, cc all artist emails, reply_to first artist.
- *
- * Body: structured placeholder with every form field — swap for the
- * user-provided template when it arrives (pending since L1).
+ * Spec S2 + S12 + S13 (odd/tasks/form-delivery-and-scale.md): the system
+ * email that replaces EmailJS. Recipients mirror the original config
+ * (to info@, cc artist emails, reply_to first artist) and the body is
+ * styled like the dashboard page — dark card, uppercase headings, gray
+ * labels — carrying EVERY payload field with artist links as real
+ * anchors, never JSON.
  */
 class ReleaseFormSubmitted extends Mailable
 {
@@ -48,12 +48,14 @@ class ReleaseFormSubmitted extends Mailable
     }
 
     /**
-     * Spec S7: the email carries every non-empty payload field — same
-     * completeness as the song history / calendar detail views.
+     * Spec S7 + S12 + S13: every non-empty payload field, styled like the
+     * dashboard page (dark card, uppercase gray labels, accent links).
      */
     private function renderBody(): string
     {
-        $releaseRows = '';
+        $submitted = now()->format('M j, Y · H:i');
+
+        $rows = '';
         foreach ($this->payload as $key => $value) {
             if (in_array($key, ['artists', 'artists_info'], true)) {
                 continue;
@@ -61,50 +63,122 @@ class ReleaseFormSubmitted extends Mailable
             if ($value === null || $value === '' || $value === []) {
                 continue;
             }
-            $releaseRows .= '<tr><td style="padding:4px 12px 4px 0;vertical-align:top;"><strong>'
-                .$this->labelFor((string) $key)
-                .'</strong></td><td style="padding:4px 0;vertical-align:top;">'
-                .$this->formatValue((string) $key, $value)
-                .'</td></tr>';
+            $rows .= '
+                <tr>
+                    <td style="padding:9px 22px 9px 0;vertical-align:top;white-space:nowrap;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">'
+                        .$this->escape($this->labelFor((string) $key)).'</td>
+                    <td style="padding:9px 0;vertical-align:top;font-size:14px;line-height:1.55;color:#ffffff;">'
+                        .$this->formatValue((string) $key, $value).'</td>
+                </tr>';
         }
 
         $artistsHtml = '';
         foreach ($this->artists() as $index => $artist) {
-            $artistsHtml .= '<h3 style="margin:18px 0 6px;">Artist '.($index + 1).'</h3><ul style="margin:0 0 8px;padding-left:18px;">';
-            if (is_array($artist)) {
-                foreach ($artist as $field => $value) {
-                    if ($value === null || $value === '' || $value === []) {
-                        continue;
-                    }
-                    if ($field === 'links' && is_array($value)) {
-                        foreach ($value as $platform => $url) {
-                            if (trim((string) $url) !== '') {
-                                $artistsHtml .= '<li><strong>'.$this->labelFor((string) $platform).':</strong> '
-                                    .htmlspecialchars((string) $url).'</li>';
-                            }
-                        }
-
-                        continue;
-                    }
-                    $artistsHtml .= '<li><strong>'.$this->labelFor((string) $field).':</strong> '
-                        .$this->formatValue((string) $field, $value).'</li>';
-                }
-            } else {
-                $artistsHtml .= '<li><pre style="white-space:pre-wrap;margin:0;">'
-                    .htmlspecialchars((string) $artist).'</pre></li>';
-            }
-            $artistsHtml .= '</ul>';
+            $artistsHtml .= $this->renderArtist($index, $artist);
         }
 
         return '
-        <div style="font-family:Arial,sans-serif;color:#333;">
-            <h2 style="margin-bottom:4px;">Music Release Form — new submission</h2>
-            <p style="margin-top:0;opacity:.7;">Full payload of the submit, identical to the song history.</p>
-            <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;">'
-            .$releaseRows
-            .'</table>
-            '.$artistsHtml.'
+        <div style="margin:0;padding:28px 12px;background-color:#000000;font-family:Arial,Helvetica,sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#000000;">
+                <tr>
+                    <td align="center" style="padding:10px;">
+                        <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"
+                               style="max-width:640px;width:100%;background-color:#0a0a0a;border:1px solid rgba(255,255,255,.12);border-radius:20px;">
+                            <tr>
+                                <td style="padding:34px;">
+                                    <h1 style="margin:0 0 8px;font-size:26px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#ffffff;">Music Release Form</h1>
+                                    <p style="margin:0 0 26px;font-size:14px;color:#a1a1aa;">New submission · '.$this->escape($submitted).'</p>
+                                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">'
+                                        .$rows.'
+                                    </table>
+                                    '.$artistsHtml.'
+                                    <p style="margin:28px 0 0;padding-top:18px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;color:#a1a1aa;">Sunset Gathering · this email carries the full payload — the same data as the song history.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </div>';
+    }
+
+    /** One artist card: heading + field rows + platform links as anchors. */
+    private function renderArtist(int $index, mixed $artist): string
+    {
+        if (! is_array($artist)) {
+            // Legacy text block (artists_info).
+            return '
+            <div style="border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04);padding:18px 20px;margin-top:16px;">
+                <h3 style="margin:0 0 10px;font-size:17px;font-weight:700;color:#ffffff;">Artist '.($index + 1).'</h3>
+                <p style="margin:0;font-size:14px;line-height:1.55;color:#ffffff;white-space:pre-wrap;">'.$this->escape((string) $artist).'</p>
+            </div>';
+        }
+
+        $name = 'Artist '.($index + 1);
+        foreach (['name', 'artist_name'] as $nameKey) {
+            if (! empty($artist[$nameKey])) {
+                $name = (string) $artist[$nameKey];
+                break;
+            }
+        }
+
+        $fieldRows = '';
+        $linkRows = '';
+        foreach ($artist as $field => $value) {
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            if ($field === 'links') {
+                foreach ((array) $value as $platform => $url) {
+                    $url = trim((string) $url);
+                    if ($url === '') {
+                        continue;
+                    }
+                    // Spec S13: platform links are anchors, never JSON.
+                    $linkRows .= '
+                    <tr>
+                        <td style="padding:6px 0;font-size:14px;">
+                            <span style="color:#a1a1aa;">'.$this->escape($this->labelFor((string) $platform)).'</span>
+                            <span style="color:#a1a1aa;"> — </span>
+                            <a href="'.$this->escape($url).'" style="color:#5b7fff;text-decoration:underline;word-break:break-all;">'.$this->escape($url).'</a>
+                        </td>
+                    </tr>';
+                }
+
+                continue;
+            }
+
+            if (in_array($field, ['name', 'artist_name'], true)) {
+                continue; // the card heading carries the name
+            }
+
+            $fieldRows .= '
+                <tr>
+                    <td style="padding:7px 20px 7px 0;vertical-align:top;white-space:nowrap;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">'
+                        .$this->escape($this->labelFor((string) $field)).'</td>
+                    <td style="padding:7px 0;vertical-align:top;font-size:14px;line-height:1.55;color:#ffffff;">'
+                        .$this->formatValue((string) $field, $value).'</td>
+                </tr>';
+        }
+
+        $linksBlock = '';
+        if ($linkRows !== '') {
+            $linksBlock = '
+                                    <p style="margin:16px 0 4px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">Platform links</p>
+                                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">'
+                                        .$linkRows.'
+                                    </table>';
+        }
+
+        return '
+            <div style="border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04);padding:20px;margin-top:16px;">
+                <h3 style="margin:0 0 12px;font-size:17px;font-weight:700;color:#ffffff;">'.$this->escape($name).'</h3>
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">'
+                    .$fieldRows.'
+                </table>
+                '.$linksBlock.'
+            </div>';
     }
 
     /** Payload artists as arrays (new form) or the legacy text block. */
@@ -134,9 +208,22 @@ class ReleaseFormSubmitted extends Mailable
             return $value ? 'Yes' : 'No';
         }
         if (is_array($value)) {
-            return htmlspecialchars(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '');
+            return $this->escape(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '');
         }
 
-        return nl2br(htmlspecialchars((string) $value));
+        $text = (string) $value;
+
+        // Spec S13: URL values become accent anchors, like the history page.
+        if (filter_var($text, FILTER_VALIDATE_URL)) {
+            return '<a href="'.$this->escape($text).'" style="color:#5b7fff;text-decoration:underline;word-break:break-all;">'
+                .$this->escape($text).'</a>';
+        }
+
+        return nl2br($this->escape($text));
+    }
+
+    private function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }

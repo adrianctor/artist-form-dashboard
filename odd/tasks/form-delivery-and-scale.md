@@ -122,7 +122,7 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 | T5 | S8, S9 | inline | done | (ver L6) |
 | T6 | S10, S13 | inline | done | (commit) |
 | T7 | S11 | inline | done | (commit) |
-| T8 | S12, S13 | inline | pending | — |
+| T8 | S12, S13 | inline | done | (commit) |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
 - T2: migración (`song_submissions.created_by`, `songs.artist_emails` + backfill + índices de S4/S9) + `SongSubmissionService` (createdBy + artist_emails) + `scopeVisibleTo` ampliado + `show()` vía scope + "Created by" en Show.vue + tests nuevos (creador ve, segundo artista ve, desconocido no, Show incluye created_by).
@@ -197,3 +197,9 @@ T5 quedó verificado en el turno anterior (Mailpit: UI 200 + API con mensajes; E
 7. **UI**: botones **Edit** (outline) y **Delete** (destructive) por entrada del historial, solo si `editable` (server-side); `@click.prevent.stop` para no togglear el `<details>`.
 8. **`ReleaseForm.vue` modo edición**: prop `editSubmission` → prefill completo (publishing, release info, cover, artistCount, artist blocks con links), **sin disclaimer**, botón "Save changes"/"Saving...", envía `router.patch(/submissions/{id})`. `artistCount` tipado a `string` (submits de API pueden tener >4 artistas).
 9. Tests `SubmissionEditDeleteTest` (11) RED→GREEN. E2E curl: edit 200 → PATCH renombra payload+canción → DELETE última → show 404. Suite **163/834**, vue-tsc 0, build OK.
+
+### L9 — T8: correo al estilo de la página + links como anclas (2026-11-19)
+
+1. **`ReleaseFormSubmitted` rediseñado** (S12): todo inline con tables (compat email) — fondo `#000000`, tarjeta `#0a0a0a` borde sutil radio20, título uppercase letter-spacing3px, "New submission · fecha", labels de campo uppercase11px `#a1a1aa`, valores blancos14px, footer de paridad con el historial. Envelope sin cambios.
+2. **S13 en el correo**: links de plataforma como filas "Label — ancla" (`#5b7fff` underline, word-break) y cualquier valor-URL del release (audio_link, photo...) también como ancla — nunca JSON. Artistas en tarjetas con heading = nombre real (paridad con Show).
+3. **Tests**: `email_is_styled_like_the_page` (#000000/#0a0a0a/uppercase/#a1a1aa) + `email_renders_artist_links_as_anchors_never_json` (href + "Spotify" + sin `{"spotify"`). Test de paridad actualizado: el heading es el nombre real ("Aaron Sevilla"/"Badrops"), no "Artist N". Suite completa verificada en T9.
