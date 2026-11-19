@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
     // Spec S1: in-app Music Release Form (replaces WordPress).
     Route::get('release-form', [ReleaseFormController::class, 'show'])->name('release-form');
+    Route::post('release-form', [ReleaseFormController::class, 'store'])->name('release-form.store');
 });
 
 require __DIR__.'/calendar.php';

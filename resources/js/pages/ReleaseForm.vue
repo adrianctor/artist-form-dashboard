@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, reactive, ref } from 'vue';
 import Swal from 'sweetalert2';
 import { releaseForm } from '@/routes';
@@ -65,10 +65,15 @@ const LINK_FIELDS = [
     { key: 'website', label: 'Website Link', core: false },
 ] as const;
 
+const page = usePage();
 const currentStep = ref(0);
 const submitting = ref(false);
-const showSuccess = ref(false);
-const locked = ref(true);
+// Success box after POST ?submitted=1 (spec S7: no Catalogo shown).
+const showSuccess = ref(
+    new URL(page.url, window.location.origin).searchParams.get('submitted') ===
+        '1',
+);
+const locked = ref(!showSuccess.value);
 
 // Spec S3: Publishing — Afrodise by default, English "No cuento con esto".
 const publishing = ref<'afrodise' | 'none'>('afrodise');
@@ -339,6 +344,7 @@ function buildPayload() {
 /* ---------- Disclaimer (same content as the original form) ---------- */
 
 onMounted(() => {
+    if (showSuccess.value) return;
     void Swal.fire({
         title: 'Important Information',
         width: 900,

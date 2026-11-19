@@ -74,7 +74,7 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T3 | S5, S6 | inline | done | 22a64ea |
 | T4 | S4 | inline | done | (commit) |
 | T5 | S1, S3, S4 | inline | done | (commit) |
-| T6 | S1 | inline | pending | — |
+| T6 | S1, S3 | inline | done | (commit) |
 | T7 | S1, S3 | inline | pending | — |
 | T8 | S2 | inline | pending | — |
 | T9 | S7 | inline | pending | — |
@@ -123,3 +123,11 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 4. **Sidebar**: item Music Release Form ahora apunta a `releaseForm()` (ruta interna) en vez de `formUrl` externo — spec S1. `FileMusic` import removido.
 5. **Ruta** `GET /release-form` (`ReleaseFormController@show`) bajo el gate `profile.complete`. Payload del submit armado (`buildPayload`) — el POST se conecta en T6.
 6. Tests `ReleaseFormPageTest` (3): guest→login, auth→200 component, dashboard sigue compartiendo formUrl. Suite: **117 tests / 525 assertions**, vue-tsc 0, build OK.
+
+### L6 — T6: submit del form al pipeline de songs (2026-11-19)
+
+1. **`SongSubmissionService`** extraído del `SongController::store` — ownership por artist emails + transacción (create/append/backfill) en UN solo lugar; el API y el form in-app lo comparten (spec S1, invariante de duplicación).
+2. **`POST /release-form`** (`ReleaseFormController::store`): validación estricta (campos required del form, `publishing in:afrodise,none`, artistas completos, `status in(New/Existing)`), regla condicional Existing→≥1 link (error `artists.N.links`), normaliza links/cover vacíos. Éxito → redirect `release-form?submitted=1` + toast; **no muestra Catalogo** (spec S7: pendiente, el form no lo llena).
+3. **API BC**: `SongController` ahora acepta `publishing` nullable (`in:afrodise,none`) y delega al servicio — 8 tests de API siguen verdes.
+4. **Frontend**: `showSuccess` lee `?submitted=1` de la URL de Inertia (skip del disclaimer al volver, success box visible).
+5. Tests `ReleaseFormSubmitTest` (7) RED→GREEN: guest→login, submit crea song+ownership+publishing en payload, `none` aceptado, publishing inválido→422, track_title vacío→422, Existing sin links→`artists.0.links`, flag submitted. Suite: **124 tests / 557 assertions**, vue-tsc 0, build OK.
