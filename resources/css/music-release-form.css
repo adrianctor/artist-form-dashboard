@@ -1,0 +1,310 @@
+/* Ported as-is from wordpress/music-release-form.html (spec S1). */
+.artist-profile-status{
+    margin:30px 0;
+}
+
+.artist-profile-status h4{
+    margin:0 0 10px;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:.5px;
+}
+
+.artist-profile-status .subtitle{
+    margin-bottom:25px;
+    font-size:14px;
+    color:#fff;
+    opacity:.9;
+}
+
+.artist-status-options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.artist-status-card{
+    position:relative;
+    cursor:pointer;
+}
+
+.artist-status-card input{
+    position:absolute;
+    opacity:0;
+}
+
+.artist-status-content{
+    height:100%;
+    padding:25px;
+    border-radius:12px;
+    background:#111;
+    border:1px solid rgba(255,255,255,.15);
+    transition:.2s; 
+}
+
+.artist-status-card input:checked + .artist-status-content{
+    border:2px solid #39d353;
+}
+
+.artist-status-icon{
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:15px;
+}
+
+.artist-status-card input:checked + .artist-status-content .artist-status-icon{
+    background:#39d353;
+    border-color:#39d353;
+}
+
+.artist-status-card input:checked + .artist-status-content .artist-status-icon:after{
+    content:"✓";
+    color:#fff;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.artist-status-title{
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:12px;
+}
+
+.artist-status-text{
+    font-size:13px;
+    line-height:1.6;
+    color:#d1d5db;
+}
+
+.artist-status-info{
+    margin-top:20px;
+    background:#0f172a;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;
+    padding:18px;
+    display:flex;
+    gap:15px;
+}
+
+.artist-status-info-icon{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:#2563eb;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    flex-shrink:0;
+}
+
+.artist-status-info-text{
+    font-size:13px;
+    line-height:1.6;
+    color:#dbeafe;
+}
+#musicReleaseForm *{
+    box-sizing:border-box;
+    font-family:'Quicksand',Arial,sans-serif;
+}
+
+#musicReleaseForm{
+    max-width:950px;
+    margin:auto;
+    color:#fff;
+}
+
+#musicReleaseForm .card{
+    background:rgba(0,0,0,.72);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(12px);
+    padding:35px;
+    border-radius:20px;
+}
+
+#musicReleaseForm h2{
+    margin:0 0 10px;
+    font-size:32px;
+    font-weight:700;
+    letter-spacing:.5px;
+}
+
+#musicReleaseForm h3{
+    margin-bottom:25px;
+}
+
+#musicReleaseForm p{
+    opacity:.7;
+}
+
+#musicReleaseForm .steps{
+    display:flex;
+    gap:8px;
+    margin:30px 0;
+}
+
+#musicReleaseForm .step-dot{
+    height:6px;
+    flex:1;
+    border-radius:20px;
+    background:rgba(255,255,255,.08);
+}
+
+#musicReleaseForm .step-dot.active{
+    background:#5b7fff;
+}
+
+#musicReleaseForm .step{
+    display:none;
+}
+
+#musicReleaseForm .step.active{
+    display:block;
+}
+
+#musicReleaseForm .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+#musicReleaseForm .group{
+    margin-bottom:20px;
+}
+
+#musicReleaseForm label{
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+#musicReleaseForm input,
+#musicReleaseForm textarea,
+#musicReleaseForm select{
+    width:100%;
+    padding:14px;
+    border-radius:14px;
+    border:2px solid #5b7fff;
+    background:#f3f7ff;
+    color:#000;
+    font-weight:600;
+    outline:none;
+    box-shadow:0 4px 15px rgba(91,127,255,.15);
+    transition:all .3s ease;
+}
+
+#musicReleaseForm textarea{
+    min-height:120px;
+}
+
+#musicReleaseForm input:focus,
+#musicReleaseForm textarea:focus,
+#musicReleaseForm select:focus{
+    border-color:#2952ff;
+    box-shadow:0 0 0 4px rgba(41,82,255,.2);
+}
+
+#musicReleaseForm .radio-group{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+#musicReleaseForm .radio-card{
+    position:relative;
+}
+
+#musicReleaseForm .radio-card input{
+    position:absolute;
+    opacity:0;
+}
+
+#musicReleaseForm .radio-card span{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:120px;
+    padding:14px 20px;
+    border-radius:12px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.12);
+    cursor:pointer;
+    transition:.2s;
+}
+
+#musicReleaseForm .radio-card input:checked + span{
+    background:#2952ff;
+    border-color:#2952ff;
+}
+
+#musicReleaseForm .actions{
+    display:flex;
+    justify-content:space-between;
+    margin-top:40px;
+}
+
+#musicReleaseForm button{
+    border:none;
+    padding:14px 24px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+#musicReleaseForm .prev{
+    background:#1f2937;
+    color:#fff;
+}
+
+#musicReleaseForm .next{
+    background:#2952ff;
+    color:#fff;
+}
+
+#musicReleaseForm .submit{
+    background:#5b7fff;
+    color:#fff;
+}
+
+#musicReleaseForm .success{
+    display:none;
+    text-align:center;
+    padding:50px 20px;
+}
+
+.artist-block{
+    margin-top:35px;
+    padding-top:35px;
+    border-top:1px solid rgba(255,255,255,.08);
+}
+
+@media(max-width:768px){
+
+    #musicReleaseForm .grid{
+        grid-template-columns:1fr;
+    }
+
+}
+#musicReleaseForm.locked {
+    pointer-events: none;
+    opacity: .5;
+}
+.required-star{
+    color:#ef4444;
+    margin-left:4px;
+    font-weight:bold;
+}
+
+.swal2-html-container ul,
+    .swal2-html-container li,
+    .swal2-html-container p,
+    .swal2-html-container strong{
+        color:#545454 !important;
+    }

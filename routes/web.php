@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArtistProfileController;
 use App\Http\Controllers\ArtistSearchController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReleaseFormController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +28,9 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
     // Spec S4: artist search for the release form's autofill.
     Route::get('artist-search', [ArtistSearchController::class, 'index'])->name('artist-search');
+
+    // Spec S1: in-app Music Release Form (replaces WordPress).
+    Route::get('release-form', [ReleaseFormController::class, 'show'])->name('release-form');
 });
 
 require __DIR__.'/calendar.php';

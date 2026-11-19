@@ -73,7 +73,7 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 | T2 | S5 | inline | done | 38de594 |
 | T3 | S5, S6 | inline | done | 22a64ea |
 | T4 | S4 | inline | done | (commit) |
-| T5 | S4 | inline | pending | — |
+| T5 | S1, S3, S4 | inline | done | (commit) |
 | T6 | S1 | inline | pending | — |
 | T7 | S1, S3 | inline | pending | — |
 | T8 | S2 | inline | pending | — |
@@ -114,3 +114,12 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 ### L4 — T4: endpoint de búsqueda de artistas (2026-11-19)
 
 `GET /artist-search?q=` (`ArtistSearchController@index`): matchea `users.name`, `users.email`, `artist_profiles.artist_name/real_name` (LIKE), filtra por `hasCompleteArtistProfile()`, ordena por nombre, límite 10 (busca ×5 candidatos antes del filtro para no quedarse corto). Respuesta JSON con todos los campos para autofill (spec S4). Guest → 401 (JSON). Tests `ArtistSearchTest` (8) RED→GREEN: nombre, email, real name, incompletos excluidos, query vacía, shape, límite.
+
+### L5 — T5: página ReleaseForm portada + Publishing + búsqueda (2026-11-19)
+
+1. **Página `ReleaseForm.vue`** (spec S1 "tal cual"): 3 steps (Release Info / Cover Information / Artists), barra de steps, disclaimer SweetAlert idéntico al original (bloqueado hasta aceptar), cover condicional (original_song_link/credits solo si is_cover=Yes), artist blocks dinámicos 1-4 con ARTIST PROFILE STATUS cards y 12 platform links (core 3 con `*` si Existing), success box. CSS portado a `resources/css/music-release-form.css` (2 style blocks del HTML original).
+2. **Spec S3 — Publishing**: radio arriba de "Number Of Artists": `Afrodise` (default) | `I don't have this` (asunción EN de "No cuento con esto"). Valor `afrodise|none` en el payload.
+3. **Spec S4 — búsqueda por artista**: input "Search registered artist" por block con debounce 250ms → `GET /artist-search` → dropdown → `applySearchHit` rellena todos los campos (nombre, real, email, role, país, city, estate, photo, bio, status, links). Blur cierra con delay (helper `closeSearchLater` — `setTimeout` inline en template rompe vue-tsc TS2339).
+4. **Sidebar**: item Music Release Form ahora apunta a `releaseForm()` (ruta interna) en vez de `formUrl` externo — spec S1. `FileMusic` import removido.
+5. **Ruta** `GET /release-form` (`ReleaseFormController@show`) bajo el gate `profile.complete`. Payload del submit armado (`buildPayload`) — el POST se conecta en T6.
+6. Tests `ReleaseFormPageTest` (3): guest→login, auth→200 component, dashboard sigue compartiendo formUrl. Suite: **117 tests / 525 assertions**, vue-tsc 0, build OK.

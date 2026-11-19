@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { CalendarDays, FileMusic, LayoutGrid, Music, Users } from '@lucide/vue';
+import { CalendarDays, LayoutGrid, Music, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,7 +15,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { calendar, dashboard } from '@/routes';
+import { calendar, dashboard, releaseForm } from '@/routes';
 import songs from '@/routes/songs';
 import users from '@/routes/users';
 import type { NavItem } from '@/types';
@@ -39,12 +39,10 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: songs.index(),
             icon: Music,
         },
-        // Spec: "el form debe estar como opción en el menú" — external WP page.
+        // Spec S1: form lives inside the app now (no more WordPress).
         {
             title: 'Music Release Form',
-            href: page.props.formUrl ?? '#',
-            icon: FileMusic,
-            external: true,
+            href: releaseForm(),
         },
     ];
 
