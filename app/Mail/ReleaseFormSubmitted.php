@@ -48,59 +48,95 @@ class ReleaseFormSubmitted extends Mailable
     }
 
     /**
-     * Structured placeholder body (pending the user's email template).
+     * Spec S7: the email carries every non-empty payload field — same
+     * completeness as the song history / calendar detail views.
      */
     private function renderBody(): string
     {
-        $p = $this->payload;
-        $e = fn (string $v): string => e($v);
-
-        $artistsHtml = '';
-        foreach ($p['artists'] ?? [] as $i => $a) {
-            $links = '';
-            foreach (($a['links'] ?? []) as $platform => $url) {
-                if (trim((string) $url) !== '') {
-                    $links .= '<li>'.$e((string) $platform).': '.$e((string) $url).'</li>';
-                }
+        $releaseRows = '';
+        foreach ($this->payload as $key => $value) {
+            if (in_array($key, ['artists', 'artists_info'], true)) {
+                continue;
             }
-            $artistsHtml .= '
-            <h3>Artist '.($i + 1).'</h3>
-            <ul>
-                <li><strong>Profile status:</strong> '.$e((string) ($a['status'] ?? '')).'</li>
-                <li><strong>Name:</strong> '.$e((string) ($a['name'] ?? '')).'</li>
-                <li><strong>Real name:</strong> '.$e((string) ($a['real_name'] ?? '')).'</li>
-                <li><strong>Email:</strong> '.$e((string) ($a['email'] ?? '')).'</li>
-                <li><strong>Role:</strong> '.$e((string) ($a['role'] ?? '')).'</li>
-                <li><strong>Country:</strong> '.$e((string) ($a['country'] ?? '')).'</li>
-                <li><strong>City:</strong> '.$e((string) ($a['city'] ?? '')).'</li>
-                <li><strong>Estate:</strong> '.$e((string) ($a['estate'] ?? '')).'</li>
-                <li><strong>Photo:</strong> '.$e((string) ($a['photo'] ?? '')).'</li>
-                <li><strong>Bio:</strong> '.$e((string) ($a['bio'] ?? '')).'</li>
-            </ul>
-            '.($links !== '' ? '<ul>'.$links.'</ul>' : '');
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+            $releaseRows .= '<tr><td style="padding:4px 12px 4px 0;vertical-align:top;"><strong>'
+                .$this->labelFor((string) $key)
+                .'</strong></td><td style="padding:4px 0;vertical-align:top;">'
+                .$this->formatValue((string) $key, $value)
+                .'</td></tr>';
         }
 
-        $publishing = ($p['publishing'] ?? '') === 'afrodise' ? 'Afrodise' : "I don't have this";
+        $artistsHtml = '';
+        foreach ($this->artists() as $index => $artist) {
+            $artistsHtml .= '<h3 style="margin:18px 0 6px;">Artist '.($index + 1).'</h3><ul style="margin:0 0 8px;padding-left:18px;">';
+            if (is_array($artist)) {
+                foreach ($artist as $field => $value) {
+                    if ($value === null || $value === '' || $value === []) {
+                        continue;
+                    }
+                    if ($field === 'links' && is_array($value)) {
+                        foreach ($value as $platform => $url) {
+                            if (trim((string) $url) !== '') {
+                                $artistsHtml .= '<li><strong>'.$this->labelFor((string) $platform).':</strong> '
+                                    .htmlspecialchars((string) $url).'</li>';
+                            }
+                        }
+
+                        continue;
+                    }
+                    $artistsHtml .= '<li><strong>'.$this->labelFor((string) $field).':</strong> '
+                        .$this->formatValue((string) $field, $value).'</li>';
+                }
+            } else {
+                $artistsHtml .= '<li><pre style="white-space:pre-wrap;margin:0;">'
+                    .htmlspecialchars((string) $artist).'</pre></li>';
+            }
+            $artistsHtml .= '</ul>';
+        }
 
         return '
         <div style="font-family:Arial,sans-serif;color:#333;">
-            <h2>Music Release Form — new submission</h2>
-            <table cellpadding="6" cellspacing="0" style="border-collapse:collapse">
-                <tr><td><strong>Publishing</strong></td><td>'.$e($publishing).'</td></tr>
-                <tr><td><strong>Track title</strong></td><td>'.$e((string) ($p['track_title'] ?? '')).'</td></tr>
-                <tr><td><strong>Cover artwork creative direction</strong></td><td>'.$e((string) ($p['cover_artwork_creative_direction'] ?? '')).'</td></tr>
-                <tr><td><strong>Audio master link</strong></td><td>'.$e((string) ($p['audio_link'] ?? '')).'</td></tr>
-                <tr><td><strong>Genre</strong></td><td>'.$e((string) ($p['genre'] ?? '')).'</td></tr>
-                <tr><td><strong>Country of recording</strong></td><td>'.$e((string) ($p['country_recording'] ?? '')).'</td></tr>
-                <tr><td><strong>Audio style</strong></td><td>'.$e((string) ($p['audio_style'] ?? '')).'</td></tr>
-                <tr><td><strong>Writers</strong></td><td>'.$e((string) ($p['writers'] ?? '')).'</td></tr>
-                <tr><td><strong>Explicit content</strong></td><td>'.$e((string) ($p['explicit_content'] ?? '')).'</td></tr>
-                <tr><td><strong>Is a cover</strong></td><td>'.$e((string) ($p['is_cover'] ?? '')).'</td></tr>
-                '.(($p['is_cover'] ?? '') === 'Yes' ? '
-                <tr><td><strong>Original song link</strong></td><td>'.$e((string) ($p['original_song_link'] ?? '')).'</td></tr>
-                <tr><td><strong>Original track credits</strong></td><td>'.$e((string) ($p['original_track_credits'] ?? '')).'</td></tr>' : '').'
-            </table>
+            <h2 style="margin-bottom:4px;">Music Release Form — new submission</h2>
+            <p style="margin-top:0;opacity:.7;">Full payload of the submit, identical to the song history.</p>
+            <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;">'
+            .$releaseRows
+            .'</table>
             '.$artistsHtml.'
         </div>';
+    }
+
+    /** Payload artists as arrays (new form) or the legacy text block. */
+    private function artists(): array
+    {
+        $artists = $this->payload['artists'] ?? null;
+        if (is_array($artists) && $artists !== []) {
+            return array_values(array_filter($artists, 'is_array'));
+        }
+
+        $legacy = $this->payload['artists_info'] ?? null;
+
+        return is_string($legacy) && $legacy !== '' ? [$legacy] : [];
+    }
+
+    private function labelFor(string $key): string
+    {
+        return ucwords(str_replace('_', ' ', $key));
+    }
+
+    private function formatValue(string $key, mixed $value): string
+    {
+        if ($key === 'publishing') {
+            return $value === 'afrodise' ? 'Afrodise' : "I don't have this";
+        }
+        if (is_bool($value)) {
+            return $value ? 'Yes' : 'No';
+        }
+        if (is_array($value)) {
+            return htmlspecialchars(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '');
+        }
+
+        return nl2br(htmlspecialchars((string) $value));
     }
 }

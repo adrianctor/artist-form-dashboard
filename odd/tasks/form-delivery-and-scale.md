@@ -89,7 +89,7 @@ Auditado:
 | T1 | S5, S2, S1 | inline | done | (commit) |
 | T2 | S6 | inline | done | (commit) |
 | T3 | S3, S4, S2 | inline | done | (commit) |
-| T4 | S7 | inline | pending | — |
+| T4 | S7 | inline | done | (commit) |
 | T5 | S8, S9 | inline | pending | — |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
@@ -129,3 +129,8 @@ L1 — 2026-11-19, petición original del usuario (verbatim):
 1. **`CalendarController` reescrito** (S3/S4): `?month=YYYY-MM` (default actual, validado con fallback) → **aggregate SQL** `COUNT(*) GROUP BY DATE(created_at)` solo de ese rango (`whereIn song_id` con `visibleTo` como subquery) → `dayCounts` ≤31 filas. `?day=YYYY-MM-DD` (solo si pertenece al mes) → submissions de ese día con join a songs → **`paginate(50)`** → `dayPage` (data/current_page/last_page/links). Props nuevas: `month`, `dayCounts`, `day`, `dayPage`. Gotchas: calificar `song_submissions.created_at` en el whereBetween (el join con songs lo hacía ambiguo →500); día fuera del mes → `day=null`.
 2. **`Calendar.vue` server-driven**: estado derivado de props (viewYear/Month desde `month`, selección desde `day`); navegación de mes/día/página = `router.get` con los params; detalle lista `dayPage.data` con `:key` = submission id (puede repetir canción el mismo día); paginación del día con botones Previous/Next; copy "Every form submit, grouped by the date it was made". Se eliminó la carga masiva `songsByDate`.
 3. **Tests `CalendarTest` reescrito** (9): guest, non-admin accede, solo-los-suyos por `dayCounts`, admin ve todo, month-scoping (submit viejo solo en su mes, `missing()` en el actual), month inválido → fallback, day bajo demanda, **day paginado** (60 submits →50+11, last_page=2), day fuera del mes → null. Suite **137/700**, vue-tsc 0, build OK.
+
+### L5 — T4: correo e historial con toda la información (2026-11-19)
+
+1. **`ReleaseFormSubmitted::renderBody` → render genérico** (S7): recorre TODAS las claves no-vacias del payload (label `ucwords` por key) + cada artista con TODOS sus campos (incl. `links` platform→url) — paridad con Show garantizada por construcción (si el form gana un campo, el correo lo lleva sin tocar código). Legacy `artists_info` (string) se renderiza como bloque `<pre>`. `publishing` sigue mapeado a "Afrodise"/"I don't have this".
+2. **Tests**: `email_contains_every_non_empty_payload_field` (valores PARITY en writers/country/genre + campos de artista presentes) + `show_delivers_the_full_submission_payload` (payload completo con links en los props de Show — el song lleva `artist_emails` para que el artista acceda, S6). Suite **139/714** (tras corregir: label "Bio" y artist_emails en el test de paridad).

@@ -78,6 +78,48 @@ class SongsPageTest extends TestCase
         );
     }
 
+    public function test_show_delivers_the_full_submission_payload(): void
+    {
+        // Spec S7: the history must show everything that was filled in the
+        // form (same data the calendar links to).
+        $song = Song::create([
+            'song_code' => 'SONG-FULL99',
+            'track_title' => 'Full Payload Song',
+            'submission_count' => 1,
+            'artist_emails' => ',full.artist@example.com,',
+        ]);
+        $song->submissions()->create([
+            'track_title' => 'Full Payload Song',
+            'payload' => [
+                'publishing' => 'afrodise',
+                'track_title' => 'Full Payload Song',
+                'genre' => 'Deep House',
+                'writers' => 'Some Writer',
+                'explicit_content' => 'No',
+                'is_cover' => 'No',
+                'artists' => [
+                    [
+                        'name' => 'Full Artist',
+                        'email' => 'full.artist@example.com',
+                        'bio' => 'Full bio here',
+                        'status' => 'New Artist',
+                        'links' => ['spotify' => 'https://open.spotify.com/x'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->actingAs(User::factory()->create(['email' => 'full.artist@example.com']))
+            ->get('/songs/SONG-FULL99')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('submissions.0.payload.genre', 'Deep House')
+                ->where('submissions.0.payload.writers', 'Some Writer')
+                ->where('submissions.0.payload.artists.0.email', 'full.artist@example.com')
+                ->where('submissions.0.payload.artists.0.links.spotify', 'https://open.spotify.com/x')
+            );
+    }
+
     public function test_unknown_song_codes_return_not_found(): void
     {
         $this->actingAs(User::factory()->create())

@@ -100,6 +100,31 @@ class ReleaseFormEmailTest extends TestCase
         });
     }
 
+    public function test_email_contains_every_non_empty_payload_field(): void
+    {
+        // Spec S7: the email must carry ALL the submit info — parity with
+        // the song history / calendar detail.
+        Mail::fake();
+
+        $this->submitForm([
+            'writers' => 'Writers PARITY Marker',
+            'country_recording' => 'Country PARITY Marker',
+            'genre' => 'Genre PARITY Marker',
+        ]);
+
+        Mail::assertSent(ReleaseFormSubmitted::class, function (ReleaseFormSubmitted $mail) {
+            $rendered = $mail->render();
+
+            return str_contains($rendered, 'Writers PARITY Marker')
+                && str_contains($rendered, 'Country PARITY Marker')
+                && str_contains($rendered, 'Genre PARITY Marker')
+                && str_contains($rendered, 'Artist 1')
+                && str_contains($rendered, 'Artist 2')
+                && str_contains($rendered, 'Bio') // every artist field key is rendered
+                && str_contains($rendered, 'DJ since 2015.');
+        });
+    }
+
     public function test_no_email_is_sent_when_validation_fails(): void
     {
         Mail::fake();
