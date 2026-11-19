@@ -88,7 +88,7 @@ Auditado:
 |----|-------|-------|--------|--------|
 | T1 | S5, S2, S1 | inline | done | (commit) |
 | T2 | S6 | inline | done | (commit) |
-| T3 | S3, S4, S2 | inline | pending | — |
+| T3 | S3, S4, S2 | inline | done | (commit) |
 | T4 | S7 | inline | pending | — |
 | T5 | S8, S9 | inline | pending | — |
 
@@ -123,3 +123,9 @@ L1 — 2026-11-19, petición original del usuario (verbatim):
 4. **Show**: cada versión muestra "**Created by**: nombre" junto a la fecha (mapeo `created_by` + eager load `createdBy`).
 5. **Gotcha**: `artist_emails` tenía que entrar al `$fillable` de Song (mass assignment la descartaba → LIKE nunca matcheaba →404 en el test).
 6. Tests `CreatorVisibilityTest` (5) RED→GREEN: creador sin email-match ve su song; segundo artista con cuenta la ve; desconocido →404/0; historial incluye created_by; merge de emails en append. Suite **132/613**, vue-tsc 0, build OK.
+
+### L4 — T3: calendario a escala (mes agregado + día paginado) (2026-11-19)
+
+1. **`CalendarController` reescrito** (S3/S4): `?month=YYYY-MM` (default actual, validado con fallback) → **aggregate SQL** `COUNT(*) GROUP BY DATE(created_at)` solo de ese rango (`whereIn song_id` con `visibleTo` como subquery) → `dayCounts` ≤31 filas. `?day=YYYY-MM-DD` (solo si pertenece al mes) → submissions de ese día con join a songs → **`paginate(50)`** → `dayPage` (data/current_page/last_page/links). Props nuevas: `month`, `dayCounts`, `day`, `dayPage`. Gotchas: calificar `song_submissions.created_at` en el whereBetween (el join con songs lo hacía ambiguo →500); día fuera del mes → `day=null`.
+2. **`Calendar.vue` server-driven**: estado derivado de props (viewYear/Month desde `month`, selección desde `day`); navegación de mes/día/página = `router.get` con los params; detalle lista `dayPage.data` con `:key` = submission id (puede repetir canción el mismo día); paginación del día con botones Previous/Next; copy "Every form submit, grouped by the date it was made". Se eliminó la carga masiva `songsByDate`.
+3. **Tests `CalendarTest` reescrito** (9): guest, non-admin accede, solo-los-suyos por `dayCounts`, admin ve todo, month-scoping (submit viejo solo en su mes, `missing()` en el actual), month inválido → fallback, day bajo demanda, **day paginado** (60 submits →50+11, last_page=2), day fuera del mes → null. Suite **137/700**, vue-tsc 0, build OK.

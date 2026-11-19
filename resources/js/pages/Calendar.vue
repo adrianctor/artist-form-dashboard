@@ -1,14 +1,29 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import songRoutes from '@/routes/songs';
 
-type DaySong = {
+// Spec S3: one row per form submit (not per song), with its own date.
+type DaySubmission = {
+    id: number;
     song_code: string;
     track_title: string;
     submission_count: number;
     created_at: string;
+};
+
+type PaginationLink = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type DayPage = {
+    data: DaySubmission[];
+    current_page: number;
+    last_page: number;
+    links: PaginationLink[];
 };
 
 defineOptions({
@@ -19,14 +34,27 @@ defineOptions({
     },
 });
 
+// Spec S4: everything derives from server props — only the requested month
+// is aggregated and the selected day is loaded (paginated) on demand.
 const props = defineProps<{
-    songsByDate: Record<string, DaySong[]>;
+    month: string; // 'YYYY-MM'
+    dayCounts: Record<string, number>;
+    day: string | null; // 'YYYY-MM-DD' | null
+    dayPage: DayPage | null;
 }>();
 
-const today = new Date();
-const viewYear = ref(today.getFullYear());
-const viewMonth = ref(today.getMonth()); // 0-11
-const selectedDate = ref<string | null>(null);
+const [initialYear, initialMonth] = props.month.split('-').map(Number);
+const viewYear = ref(initialYear);
+const viewMonth = ref(initialMonth - 1); // 0-11
+
+watch(
+    () => props.month,
+    (value) => {
+        const [year, month] = value.split('-').map(Number);
+        viewYear.value = year;
+        viewMonth.value = month - 1;
+    },
+);
 
 const monthLabel = computed(() =>
     new Date(viewYear.value, viewMonth.value, 1).toLocaleString('en-US', {
@@ -56,19 +84,19 @@ const days = computed<DayCell[]>(() => {
         cells.push({
             day,
             key,
-            count: (props.songsByDate[key] ?? []).length,
+            count: props.dayCounts[key] ?? 0,
         });
     }
     return cells;
 });
 
-const selectedSongs = computed<DaySong[]>(() =>
-    selectedDate.value ? (props.songsByDate[selectedDate.value] ?? []) : [],
+const selectedSubmissions = computed<DaySubmission[]>(
+    () => props.dayPage?.data ?? [],
 );
 
 const selectedLabel = computed(() =>
-    selectedDate.value
-        ? new Date(`${selectedDate.value}T00:00:00`).toLocaleDateString('en-US', {
+    props.day
+        ? new Date(`${props.day}T00:00:00`).toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
@@ -77,30 +105,32 @@ const selectedLabel = computed(() =>
         : null,
 );
 
+function monthParam(offset: number): string {
+    const date = new Date(viewYear.value, viewMonth.value + offset, 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function previousMonth(): void {
-    if (viewMonth.value === 0) {
-        viewMonth.value = 11;
-        viewYear.value -= 1;
-    } else {
-        viewMonth.value -= 1;
-    }
-    selectedDate.value = null;
+    router.get('/calendar', { month: monthParam(-1) });
 }
 
 function nextMonth(): void {
-    if (viewMonth.value === 11) {
-        viewMonth.value = 0;
-        viewYear.value += 1;
-    } else {
-        viewMonth.value += 1;
-    }
-    selectedDate.value = null;
+    router.get('/calendar', { month: monthParam(1) });
 }
 
 function selectDay(cell: DayCell): void {
     if (cell && cell.count > 0) {
-        selectedDate.value = cell.key;
+        // Spec S4: day detail comes from the server (paginated).
+        router.get('/calendar', { month: props.month, day: cell.key });
     }
+}
+
+function goToPage(page: number): void {
+    router.get(
+        '/calendar',
+        { month: props.month, day: props.day, page },
+        { preserveScroll: true },
+    );
 }
 </script>
 
@@ -114,7 +144,7 @@ function selectDay(cell: DayCell): void {
                     Song calendar
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Every registered song, grouped by date.
+                    Every form submit, grouped by the date it was made.
                 </p>
             </div>
             <div class="flex items-center gap-2">
@@ -149,7 +179,7 @@ function selectDay(cell: DayCell): void {
                         :class="
                             cell.count === 0
                                 ? 'border-transparent text-muted-foreground/50'
-                                : selectedDate === cell.key
+                                : props.day === cell.key
                                   ? 'border-primary bg-primary text-primary-foreground'
                                   : 'border-sidebar-border/70 bg-card hover:border-primary/60 dark:border-sidebar-border'
                         "
@@ -161,7 +191,7 @@ function selectDay(cell: DayCell): void {
                             v-if="cell.count > 0"
                             class="mt-0.5 rounded-full px-1.5 text-[10px] font-semibold"
                             :class="
-                                selectedDate === cell.key
+                                props.day === cell.key
                                     ? 'bg-primary-foreground/20 text-primary-foreground'
                                     : 'bg-primary/15 text-primary'
                             "
@@ -173,55 +203,81 @@ function selectDay(cell: DayCell): void {
             </div>
         </div>
 
-        <!-- Selected day detail -->
+        <!-- Selected day detail (server-loaded, paginated — spec S4) -->
         <section
-            v-if="selectedDate && selectedSongs.length > 0"
+            v-if="props.day && selectedSubmissions.length > 0"
             class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
         >
             <h2 class="mb-3 text-lg font-semibold">
                 {{ selectedLabel }}
                 <span class="ml-2 text-sm font-normal text-muted-foreground">
-                    {{ selectedSongs.length }}
-                    {{ selectedSongs.length === 1 ? 'song' : 'songs' }}
+                    {{ selectedSubmissions.length }}
+                    {{ selectedSubmissions.length === 1 ? 'submit' : 'submits' }}
                 </span>
             </h2>
             <ul class="divide-y divide-sidebar-border/50 dark:divide-sidebar-border">
                 <li
-                    v-for="song in selectedSongs"
-                    :key="song.song_code"
+                    v-for="submission in selectedSubmissions"
+                    :key="submission.id"
                     class="flex items-center justify-between gap-4 py-2"
                 >
                     <div class="min-w-0">
                         <Link
-                            :href="songRoutes.show({ songCode: song.song_code })"
+                            :href="songRoutes.show({ songCode: submission.song_code })"
                             class="block truncate text-sm font-medium hover:text-primary"
                         >
-                            {{ song.track_title }}
+                            {{ submission.track_title }}
                         </Link>
                         <span class="text-xs text-muted-foreground">
                             Catalogo
-                            <span class="font-mono">{{ song.song_code }}</span>
+                            <span class="font-mono">{{ submission.song_code }}</span>
                         </span>
                     </div>
                     <span class="shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {{ song.submission_count }}
-                        {{ song.submission_count === 1 ? 'version' : 'versions' }}
+                        {{ submission.submission_count }}
+                        {{ submission.submission_count === 1 ? 'version' : 'versions' }}
                     </span>
                 </li>
             </ul>
+
+            <nav
+                v-if="props.dayPage && props.dayPage.last_page > 1"
+                class="mt-4 flex items-center justify-between"
+                aria-label="Day pagination"
+            >
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="props.dayPage.current_page <= 1"
+                    @click="goToPage(props.dayPage.current_page - 1)"
+                >
+                    ← Previous
+                </Button>
+                <span class="text-sm text-muted-foreground">
+                    Page {{ props.dayPage.current_page }} of {{ props.dayPage.last_page }}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="props.dayPage.current_page >= props.dayPage.last_page"
+                    @click="goToPage(props.dayPage.current_page + 1)"
+                >
+                    Next →
+                </Button>
+            </nav>
         </section>
 
         <p
-            v-else-if="selectedDate"
+            v-else-if="props.day"
             class="rounded-xl border border-sidebar-border/70 p-4 text-sm text-muted-foreground dark:border-sidebar-border"
         >
-            No songs registered on this date.
+            No submits registered on this date.
         </p>
         <p
             v-else
             class="text-sm text-muted-foreground"
         >
-            Select a highlighted day to see the songs registered then.
+            Select a highlighted day to see the submits made then.
         </p>
     </main>
 </template>
