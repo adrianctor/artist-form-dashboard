@@ -107,6 +107,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin bootstrap password
+    |--------------------------------------------------------------------------
+    |
+    | Consumed by RolesAndUsersSeeder for the single admin account. When it
+    | is unset in production the seeder generates a random password and
+    | logs it once, so a public repository never ships known credentials.
+    |
+    */
+
+    'admin_password' => env('ADMIN_PASSWORD'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |
