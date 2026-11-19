@@ -111,6 +111,29 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 - **Show**: el servidor transforma `payload.artists` en estructura (`{name, fields:[{label,value}], links:[{label,url}]}`) — el `links` sale del string JSON y se pinta como lista: label de plataforma (Spotify, Apple Music, ...) + ancla clickeable estilo página (`text-primary underline`, `word-break`), nunca `JSON.stringify`. Testeable a nivel de props.
 - **Correo**: cada link como fila "Plataforma — ancla clickeable" (color de acento de la página, underline, word-break); los valores URL del release (audio_link, photo, ...) también se vuelven anclas. Test: el mail contiene `href="..."` + label y **no** contiene JSON (`{"spotify"`).
 
+### S14 — Song history: paginación visible, columnas Artists/Created by, sin "N submissions"
+
+> "arreglar la paginacion que no se ve de song history, cambiar la columna Versions por todos los artistas que tiene la track, ademas de la columna Created by con el usuario que la creó, sacar todo lo que diga 'N submissions' no aplican versiones acá"
+
+- **Paginación**: el paginador del server (`paginate(15)`) ya llegaba al client; se verifica que el nav renderiza (`last_page > 1`) y que el filtro es **server-side** (`?q=` en el query string + `withQueryString()`) para que con millones de filas busque en toda la tabla, no en la página visible.
+- **Columnas**: `Versions` → `Artists` (unión de `payload.artists[].name` de todos los submits, fallback `artist_emails`) y `Created by` (nombre del creador del primer submit). El controller no envía más `submission_count`.
+- **Sin "N submissions"**: se elimina el badge de Show, el badge "N versions" de Calendar, la línea "{{ n }} versions" del Dashboard y el copy "Browse songs and their submission versions.".
+- Tests: columnas nuevas en props, `missing('submission_count')`, filtro server-side que encuentra una track más allá de la página visible.
+
+### S15 — Submission activity funcional + Dashboard acotado y rápido
+
+> "hacer funcional Submission activity nunca aparece nada" / "en el Dashboard la tarjeta 'Recent Songs' se estira mucho con artos submissions, arreglar para que con muchas submissions no se vea mal ni funcione lento"
+
+- **Activity**: el chart ya recibía `submissionsDaily` (30 días, aggregate con índice `created_at`); se agrega **estado vacío** ("No submissions in the last 30 days…") en vez de un chart en blanco, y la lista **Latest submissions** (últimos10 visibles con `created_by` + fecha, `max-h-72 overflow-y-auto` para que nunca estire la tarjeta).
+- **Recent songs**: sin texto de versions; `truncate` en títulos; lista limitada a 8 (ya por el controller). Queries acotadas (`limit(8)`, `limit(10)`, ventana de30 días, `paginate(15)`) + índices existentes (`created_at`, `created_by`, `(song_id, created_at)`, `updated_at`).
+- Tests: `recentSubmissions` visible solo para tracks propios/visibles, `recentSongs` sin `submission_count`.
+
+### S16 — Correo responsive
+
+> "revisar y arreglar la responsividad del correo de envío de la canción"
+
+- Media query `@media (max-width:480px)`: card `afd-card` con padding reducido, labels `afd-label` apilados (`display:block`, sin `white-space:nowrap`) y h1 `afd-h1` achicado. Card fluida (`max-width:640px;width:100%` ya existente) y `word-break:break-all` en enlaces se mantienen. Test: media query + clases presentes y sin `white-space:nowrap` en el render.
+
 ## Tasks
 
 | ID | Specs | Route | Status | Commit |
@@ -124,6 +147,7 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 | T7 | S11 | inline | done | 46b616a |
 | T8 | S12, S13 | inline | done | 8678955 |
 | T9 | verificación final | inline | done | (commit) |
+| T10 | S14, S15, S16, S17 | inline | done | 7933661, bbb7ed6 |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
 - T2: migración (`song_submissions.created_by`, `songs.artist_emails` + backfill + índices de S4/S9) + `SongSubmissionService` (createdBy + artist_emails) + `scopeVisibleTo` ampliado + `show()` vía scope + "Created by" en Show.vue + tests nuevos (creador ve, segundo artista ve, desconocido no, Show incluye created_by).
@@ -134,6 +158,7 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 - T7: rutas edit/update/destroy + `ReleaseFormController` (`validatedRelease` extraído de store, `findEditableSubmission` con vista→404 y creador→403) + `SongSubmissionService::recomputeArtistEmails` + botones Edit/Delete en Show (confirm) + `ReleaseForm.vue` con prop `editSubmission` (prefill, sin disclaimer, "Save changes", PATCH) + `SubmissionEditDeleteTest` (~10 tests).
 - T8: `ReleaseFormSubmitted` rediseñado al estilo de la página (dark, cards, labels uppercase gris, anclas de accent) + tests de estilo y de links-ancla (no JSON).
 - T9: verificación final (suite, vue-tsc, build, E2E edit/delete por curl) + cierre del doc.
+- T10: song history server-side (`?q=`, columnas artists/created_by sin submission_count) + quitar todo el wording "N submissions/versions" (Show, Calendar, Dashboard, Index) + Submission activity con estado vacío y lista Latest submissions acotada + correo responsive (media query + labels que envuelven). Suite/vue-tsc/build + E2E HTTP (props verificadas en /dashboard, /songs, /songs?q=).
 
 ## Log
 
@@ -216,3 +241,21 @@ T5 quedó verificado en el turno anterior (Mailpit: UI 200 + API con mensajes; E
 - S13: links de artistas como anclas en Show Y en el correo — nunca JSON.
 
 **Nota**: `AssertableInertia::where` entrega una `Collection` a los closures (no array) — usar `pluck()/contains()` en tests.
+
+### L11 — T10a: song history + Submission activity + tarjeta acotada (2026-11-19)
+
+> "arreglar la paginacion que no se ve de song history, cambiar la columna Versions por todos los artistas que tiene la track, ademas de la columna Created by con el usuario que la creó, sacar todo lo que diga 'N submissions' no aplican versiones acá, hacer funcional Submission activity nunca aparece nada"
+
+> "en el Dashboard la tarjeta 'Recent Songs' se estira mucho con artos submissions, arreglar para que con muchas submissions no se vea mal ni funcione lento"
+
+- RED→GREEN en `SongsPageTest` (columnas artists/created_by + filtro server-side); el resto de tests (Dashboard, mail) se agregaron en verde tras la implementación.
+- `SongPageController::index`: eager `submissions` acotado, unión de artistas, `created_by` del primer submit, filtro `?q=` LIKE sobre song_code/track_title con `withQueryString()`.
+- Se elimina `submission_count` de props de index/show/calendar/recentSongs (UI actualizada en Index/Show/Calendar/Dashboard).
+- `DashboardController::recentSubmissions` (últimos10 visibles, `whereIn` sobre el scope + `latest(id)`); `SubmissionsChart` con `hasActivity` y estado vacío; lista `Latest submissions` con `max-h-72 overflow-y-auto`.
+- E2E HTTP: `/dashboard` → recentSongs sin submission_count, recentSubmissions con datos, 30 días en submissionsDaily; `/songs` → 18 registros, página 1 de 2, keys artists/created_by; `?q=needle` → total 0 y q reflejado. Commit `7933661`.
+
+### L12 — T10b: correo responsive (2026-11-19)
+
+> "revisar y arreglar la responsividad del correo de envío de la canción"
+
+- `ReleaseFormSubmitted`: bloque `<style>` con media query 480px (card/labels/h1/artist-card), se quita `white-space:nowrap` de los labels para que envuelvan en pantallas chicas; card fluida 640px ya existente. Test `test_email_is_responsive_on_narrow_screens`. Commit `bbb7ed6`.
