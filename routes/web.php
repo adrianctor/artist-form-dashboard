@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     // Spec S6: My profile — artist info create/edit (also the gate's
     // redirect target; EnsureArtistProfileComplete lets this route through).
     Route::get('my-profile', [ArtistProfileController::class, 'show'])->name('my-profile');
+    Route::patch('my-profile', [ArtistProfileController::class, 'update'])->name('my-profile.update');
 });
 
 require __DIR__.'/calendar.php';
