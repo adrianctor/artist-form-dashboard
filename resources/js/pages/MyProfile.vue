@@ -7,6 +7,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type ArtistProfile = {
     artist_name: string;
@@ -157,13 +158,13 @@ const platforms = [
 
             <div class="grid gap-2">
                 <Label for="bio">Artist Bio *</Label>
-                <textarea
+                <Textarea
                     id="bio"
                     name="bio"
                     :default-value="profile?.bio"
                     required
                     placeholder="Tell us about the artist"
-                    class="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="min-h-[120px]"
                 />
                 <InputError class="mt-2" :message="errors.bio" />
             </div>

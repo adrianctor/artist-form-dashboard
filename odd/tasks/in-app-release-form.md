@@ -162,3 +162,13 @@ Los 9 tasks (T1-T9) completados en 9 commits sobre `feat/dashboard-mvp` (38de594
 > "el item de my profile debería ir debajo de Music Release Form por que abajo no es intuitivo. corrigelo"
 
 Movido del dropdown `UserMenuContent` (footer del sidebar) a `mainNavItems` de `AppSidebar`, justo debajo de **Music Release Form** (icono User, ruta `myProfile()`). Dropdown queda solo con Settings + Log out. Suite **126/555**, vue-tsc 0, build OK.
+
+### L12 — Fix: artist bio no cargaba en My profile (2026-11-19)
+
+**Síntoma del usuario**: "artist bio no se está guardando o no se está cargando".
+
+**Diagnóstico** (E2E primero): el guardado **sí funciona** — PATCH `/my-profile` → `BIO_PATCH_OK` en BD y en los props de vuelta. El bio **sí llega** en `data-page` (verificado con sentinel `MY_BIO_SENTINEL_42`). El bug era de render: el `<textarea>` nativo de `MyProfile.vue` usaba `:default-value`, que Vue compila como **atributo HTML `default-value`** — los textareas nativos lo ignoran (no existe en el spec HTML). Todos los demás campos usan el componente `Input` de shadcn, que sí declara la prop `defaultValue` (vía `useVModel`) y por eso cargaban; solo el bio (el único `<textarea>` nativo) quedaba vacío.
+
+**Fix**: nuevo `resources/js/components/ui/textarea/Textarea.vue` (mismo patrón que `ui/input/Input.vue`: `useVModel` + `defaultValue` → bindea `value` del DOM) + `index.ts`; `MyProfile.vue` lo usa con `:default-value="profile?.bio"`. Compilación verificada con `@vue/compiler-dom`: `v-model` genera `onUpdate:modelValue` (bindeo real), no atributo.
+
+**Verificación**: `vue-tsc` 0, suite **126/555**, build OK. E2E: login → props con bio → PATCH → BD + props actualizados.
