@@ -39,8 +39,8 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: PHP dependencies (no-dev)
-        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
+      - name: PHP dependencies (with dev, for tests)
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: JS dependencies
         run: npm ci
@@ -50,6 +50,9 @@ jobs:
 
       - name: Run tests
         run: php artisan test
+
+      - name: Prune dev dependencies for production
+        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --no-progress
 
       - name: Build assets
         run: npm run build
