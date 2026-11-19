@@ -182,6 +182,24 @@ class ReleaseFormEmailTest extends TestCase
         });
     }
 
+    public function test_email_is_responsive_on_narrow_screens(): void
+    {
+        // Spec: the email must adapt to phones — mobile media query, a
+        // fluid 640px card, and labels that may wrap (no forced nowrap).
+        Mail::fake();
+
+        $this->submitForm();
+
+        Mail::assertSent(ReleaseFormSubmitted::class, function (ReleaseFormSubmitted $mail) {
+            $rendered = $mail->render();
+
+            return str_contains($rendered, '@media only screen and (max-width:480px)')
+                && str_contains($rendered, 'max-width:640px;width:100%')
+                && str_contains($rendered, 'class="afd-label"')
+                && ! str_contains($rendered, 'white-space:nowrap');
+        });
+    }
+
     public function test_no_email_is_sent_when_validation_fails(): void
     {
         Mail::fake();

@@ -65,7 +65,7 @@ class ReleaseFormSubmitted extends Mailable
             }
             $rows .= '
                 <tr>
-                    <td style="padding:9px 22px 9px 0;vertical-align:top;white-space:nowrap;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">'
+                    <td class="afd-label" style="padding:9px 22px 9px 0;vertical-align:top;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">'
                         .$this->escape($this->labelFor((string) $key)).'</td>
                     <td style="padding:9px 0;vertical-align:top;font-size:14px;line-height:1.55;color:#ffffff;">'
                         .$this->formatValue((string) $key, $value).'</td>
@@ -78,6 +78,14 @@ class ReleaseFormSubmitted extends Mailable
         }
 
         return '
+        <style>
+            @media only screen and (max-width:480px){
+                .afd-card{padding:22px 16px !important;}
+                .afd-label{display:block !important;white-space:normal !important;padding:0 0 2px !important;}
+                .afd-h1{font-size:20px !important;letter-spacing:2px !important;}
+                .afd-artist{padding:16px !important;}
+            }
+        </style>
         <div style="margin:0;padding:28px 12px;background-color:#000000;font-family:Arial,Helvetica,sans-serif;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#000000;">
                 <tr>
@@ -85,8 +93,8 @@ class ReleaseFormSubmitted extends Mailable
                         <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"
                                style="max-width:640px;width:100%;background-color:#0a0a0a;border:1px solid rgba(255,255,255,.12);border-radius:20px;">
                             <tr>
-                                <td style="padding:34px;">
-                                    <h1 style="margin:0 0 8px;font-size:26px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#ffffff;">Music Release Form</h1>
+                                <td class="afd-card" style="padding:34px;">
+                                    <h1 class="afd-h1" style="margin:0 0 8px;font-size:26px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#ffffff;">Music Release Form</h1>
                                     <p style="margin:0 0 26px;font-size:14px;color:#a1a1aa;">New submission · '.$this->escape($submitted).'</p>
                                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">'
                                         .$rows.'
@@ -155,7 +163,7 @@ class ReleaseFormSubmitted extends Mailable
 
             $fieldRows .= '
                 <tr>
-                    <td style="padding:7px 20px 7px 0;vertical-align:top;white-space:nowrap;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">'
+                    <td class="afd-label" style="padding:7px 20px 7px 0;vertical-align:top;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa;">'
                         .$this->escape($this->labelFor((string) $field)).'</td>
                     <td style="padding:7px 0;vertical-align:top;font-size:14px;line-height:1.55;color:#ffffff;">'
                         .$this->formatValue((string) $field, $value).'</td>
@@ -172,7 +180,7 @@ class ReleaseFormSubmitted extends Mailable
         }
 
         return '
-            <div style="border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04);padding:20px;margin-top:16px;">
+            <div class="afd-artist" style="border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04);padding:20px;margin-top:16px;">
                 <h3 style="margin:0 0 12px;font-size:17px;font-weight:700;color:#ffffff;">'.$this->escape($name).'</h3>
                 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">'
                     .$fieldRows.'
