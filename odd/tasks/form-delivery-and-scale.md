@@ -147,7 +147,7 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 | T7 | S11 | inline | done | 46b616a |
 | T8 | S12, S13 | inline | done | 8678955 |
 | T9 | verificación final | inline | done | (commit) |
-| T10 | S14, S15, S16, S17 | inline | done | 7933661, bbb7ed6 |
+| T10 | S14, S15, S16 | inline | done | 7933661, bbb7ed6 |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
 - T2: migración (`song_submissions.created_by`, `songs.artist_emails` + backfill + índices de S4/S9) + `SongSubmissionService` (createdBy + artist_emails) + `scopeVisibleTo` ampliado + `show()` vía scope + "Created by" en Show.vue + tests nuevos (creador ve, segundo artista ve, desconocido no, Show incluye created_by).
