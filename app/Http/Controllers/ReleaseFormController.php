@@ -98,11 +98,13 @@ class ReleaseFormController extends Controller
         // mailable's envelope carries to/cc/replyTo.
         Mail::send(new ReleaseFormSubmitted($validated));
 
-        return redirect()
-            ->route('release-form', ['submitted' => 1])
-            ->with('toast', [
-                'type' => 'success',
-                'message' => 'Release submitted successfully.',
-            ]);
+        // Spec S5: after a successful submit the user lands on the calendar
+        // (with the new track on today's date) + a visible toast.
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Release submitted successfully.',
+        ]);
+
+        return to_route('calendar');
     }
 }

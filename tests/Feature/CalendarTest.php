@@ -33,12 +33,42 @@ class CalendarTest extends TestCase
         $this->get('/calendar')->assertRedirect(route('login'));
     }
 
-    public function test_non_admin_users_are_forbidden_from_the_calendar(): void
+    public function test_non_admin_users_can_view_the_calendar(): void
     {
+        // Spec S2: the calendar is for every user, not just the admin.
         $user = User::factory()->create();
         $user->assignRole('user');
 
-        $this->actingAs($user)->get('/calendar')->assertForbidden();
+        $this->actingAs($user)->get('/calendar')->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Calendar'));
+    }
+
+    public function test_non_admin_only_sees_their_own_songs_on_the_calendar(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('user');
+        $owner = User::factory()->create();
+        $owner->assignRole('user');
+
+        Song::create([
+            'song_code' => 'SONG-MINE001',
+            'track_title' => 'My Song',
+            'submission_count' => 1,
+            'user_id' => $user->id,
+        ]);
+        Song::create([
+            'song_code' => 'SONG-THEIRS1',
+            'track_title' => 'Someone Else Song',
+            'submission_count' => 1,
+            'user_id' => $owner->id,
+        ]);
+
+        $this->actingAs($user)->get('/calendar')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('songsByDate.'.now()->toDateString().'.0.song_code', 'SONG-MINE001')
+                ->missing('songsByDate.'.now()->toDateString().'.1')
+            );
     }
 
     public function test_admin_can_view_the_calendar_grouped_by_date(): void

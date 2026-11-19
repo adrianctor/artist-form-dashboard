@@ -68,12 +68,18 @@ const LINK_FIELDS = [
 const page = usePage();
 const currentStep = ref(0);
 const submitting = ref(false);
-// Success box after POST ?submitted=1 (spec S7: no Catalogo shown).
-const showSuccess = ref(
-    new URL(page.url, window.location.origin).searchParams.get('submitted') ===
-        '1',
+const locked = ref(true);
+
+// Spec S5: server validation errors (422 -> redirect back) must be visible
+// on the form — never fail silently.
+const errors = computed<Record<string, string | string[]>>(
+    () =>
+        (page.props as { errors?: Record<string, string | string[]> }).errors ??
+        {},
 );
-const locked = ref(!showSuccess.value);
+const errorList = computed(() => [
+    ...new Set(Object.values(errors.value).flat().filter(Boolean)),
+]);
 
 // Spec S3: Publishing — Afrodise by default, English "No cuento con esto".
 const publishing = ref<'afrodise' | 'none'>('afrodise');
@@ -344,7 +350,6 @@ function buildPayload() {
 /* ---------- Disclaimer (same content as the original form) ---------- */
 
 onMounted(() => {
-    if (showSuccess.value) return;
     void Swal.fire({
         title: 'Important Information',
         width: 900,
@@ -407,6 +412,20 @@ onMounted(() => {
                     class="step-dot"
                     :class="{ active: i - 1 <= currentStep }"
                 />
+            </div>
+
+            <!-- Spec S5: visible server-side validation errors (422). -->
+            <div
+                v-if="errorList.length"
+                role="alert"
+                class="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200"
+            >
+                <p class="mb-2 font-semibold">The form could not be sent:</p>
+                <ul class="list-inside list-disc space-y-1">
+                    <li v-for="message in errorList" :key="message">
+                        {{ message }}
+                    </li>
+                </ul>
             </div>
 
             <form id="releaseForm" @submit.prevent>
@@ -916,11 +935,6 @@ onMounted(() => {
                     </button>
                 </div>
             </form>
-
-            <div v-if="showSuccess" class="success" style="display: block">
-                <h2>Submission Sent</h2>
-                <p>Your release has been submitted successfully.</p>
-            </div>
         </div>
     </div>
 </template>

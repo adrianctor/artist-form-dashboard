@@ -67,7 +67,7 @@ class ReleaseFormEmailTest extends TestCase
 
         $this->actingAs(User::factory()->create())
             ->post('/release-form', $payload)
-            ->assertRedirect(route('release-form', ['submitted' => 1]));
+            ->assertRedirect(route('calendar'));
     }
 
     public function test_submit_sends_the_system_email_with_original_recipients(): void

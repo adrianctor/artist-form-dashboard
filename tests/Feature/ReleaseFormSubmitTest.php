@@ -64,7 +64,7 @@ class ReleaseFormSubmitTest extends TestCase
 
         $this->actingAs($user)
             ->post('/release-form', $this->validPayload())
-            ->assertRedirect(route('release-form', ['submitted' => 1]));
+            ->assertRedirect(route('calendar'));
 
         $song = Song::first();
         $this->assertNotNull($song);
@@ -93,7 +93,7 @@ class ReleaseFormSubmitTest extends TestCase
                 'publishing' => 'none',
                 'artists' => [],
             ]))
-            ->assertRedirect(route('release-form', ['submitted' => 1]));
+            ->assertRedirect(route('calendar'));
 
         $payload = Song::first()->submissions()->first()->payload;
         $this->assertSame('none', $payload['publishing']);
@@ -136,13 +136,20 @@ class ReleaseFormSubmitTest extends TestCase
             ->assertSessionHasErrors('artists.0.links');
     }
 
-    public function test_success_flag_resets_on_later_visits(): void
+    public function test_submit_lands_on_the_calendar(): void
     {
+        // Spec S5: after a successful submit the user is taken to the
+        // calendar where the new track appears on today's date.
         $user = User::factory()->create();
+        User::factory()->create(['email' => 'owner.artist@example.com']);
 
         $this->actingAs($user)
-            ->get(route('release-form', ['submitted' => 1]))
+            ->post('/release-form', $this->validPayload())
+            ->assertRedirect(route('calendar'));
+
+        $this->actingAs($user)
+            ->get(route('calendar'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('ReleaseForm'));
+            ->assertInertia(fn ($page) => $page->component('Calendar'));
     }
 }

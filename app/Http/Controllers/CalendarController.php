@@ -8,16 +8,16 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Admin calendar: every song grouped by the date it was registered.
- * Non-admins get 403 (spec L10: only the admin sees all songs).
+ * Calendar (spec S2/S3): every form submit grouped by the date it was
+ * made. Accessible to all authenticated users; each user sees their own
+ * songs (admins see everything) via scopeVisibleTo.
  */
 class CalendarController extends Controller
 {
     public function index(Request $request): Response
     {
-        abort_unless($request->user()->hasRole('admin'), 403);
-
         $songsByDate = Song::query()
+            ->visibleTo($request->user())
             ->select(['id', 'song_code', 'track_title', 'submission_count', 'created_at'])
             ->orderBy('created_at')
             ->get()
