@@ -10,6 +10,6 @@ use Illuminate\Support\Facades\Route;
 | Owner: calendar unit. Parent owns routes/web.php.
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
 });

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\ArtistProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +37,34 @@ class UserFactory extends Factory
             'two_factor_confirmed_at' => null,
             /* @end-chisel-2fa */
         ];
+    }
+
+    /**
+     * Spec S5 (profile gate): factory users come with a complete artist
+     * profile so they pass EnsureArtistProfileComplete. Tests that need an
+     * incomplete/missing profile delete it (ProfileGateTest, ArtistProfileTest).
+     */
+    public function configure()
+    {
+        return $this->afterCreating(function (User $user) {
+            if ($user->artistProfile()->exists()) {
+                return;
+            }
+
+            ArtistProfile::create([
+                'user_id' => $user->id,
+                'artist_name' => $user->name,
+                'real_name' => $user->name,
+                'role' => 'Artist',
+                'country' => 'Argentina',
+                'city' => 'Buenos Aires',
+                'estate' => 'CABA',
+                'photo' => 'https://drive.google.com/photo.jpg',
+                'bio' => 'Test artist bio.',
+                'status' => 'New Artist',
+                'links' => [],
+            ]);
+        });
     }
 
     /**

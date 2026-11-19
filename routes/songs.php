@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 | Owner: songs-pages work unit. Parent owns routes/web.php.
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('/songs', [SongPageController::class, 'index'])->name('songs.index');
     Route::get('/songs/{songCode}', [SongPageController::class, 'show'])->name('songs.show');
 });

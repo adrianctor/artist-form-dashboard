@@ -97,11 +97,13 @@ class SocialLoginTest extends TestCase
             'Social signups must not require email verification.'
         );
 
-        // Following the redirect must land on the dashboard, NOT on
-        // the email verification notice.
+        // Following the redirect must land on the artist-profile gate
+        // (spec S5: new signups complete their profile first), NOT on the
+        // email verification notice.
         $this->get(route('dashboard'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
+            ->assertRedirect(route('my-profile'));
+
+        $this->get(route('my-profile'))->assertOk();
     }
 
     public function test_social_login_verifies_a_previously_unverified_account(): void
