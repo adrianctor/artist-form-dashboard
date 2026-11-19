@@ -72,10 +72,63 @@ class SongsPageTest extends TestCase
             ->has('submissions', 2)
             ->where('submissions.0.track_title', 'Northern Lights (v2)')
             ->where('submissions.0.payload.genre', 'Dream pop')
-            ->where('submissions.0.version', 2)
+            // Spec S10: no "Version N" in a submit's info.
+            ->missing('submissions.0.version')
+            ->missing('submissions.1.version')
             ->where('submissions.1.track_title', 'Northern Lights (v1)')
-            ->where('submissions.1.version', 1)
         );
+    }
+
+    public function test_show_shapes_artist_links_as_pairs_never_json(): void
+    {
+        // Spec S13: platform links leave the payload as {label,url} pairs so
+        // the page renders real anchors instead of a JSON blob.
+        $user = User::factory()->create();
+        $song = Song::create([
+            'song_code' => 'SONG-LINKS01',
+            'user_id' => $user->id,
+            'track_title' => 'Links Song',
+            'submission_count' => 1,
+        ]);
+        SongSubmission::create([
+            'song_id' => $song->id,
+            'track_title' => 'Links Song',
+            'payload' => [
+                'genre' => 'House',
+                'artists' => [
+                    [
+                        'name' => 'Link Artist',
+                        'email' => 'link.artist@example.com',
+                        'bio' => 'Bio here',
+                        'links' => [
+                            'spotify' => 'https://open.spotify.com/artist/xyz',
+                            'apple_music' => '',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get('/songs/SONG-LINKS01')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                // Structured links: label + url, empty ones dropped.
+                ->where('submissions.0.artists.0.name', 'Link Artist')
+                ->has('submissions.0.artists.0.links', 1)
+                ->where('submissions.0.artists.0.links.0.label', 'Spotify')
+                ->where('submissions.0.artists.0.links.0.url', 'https://open.spotify.com/artist/xyz')
+                // The name is the card heading, not a duplicated row, and the
+                // raw links key never reaches the fields list as JSON.
+                ->where('submissions.0.artists.0.fields', function ($fields) {
+                    // AssertableInertia hands collections to the closure.
+                    $labels = $fields->pluck('label');
+
+                    return ! $labels->contains('Name')
+                        && ! $labels->contains('Links')
+                        && $labels->contains('Bio');
+                })
+            );
     }
 
     public function test_show_delivers_the_full_submission_payload(): void

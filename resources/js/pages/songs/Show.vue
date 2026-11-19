@@ -5,8 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
 import songRoutes from '@/routes/songs';
 
-type PayloadValue = unknown;
-type SongPayload = Record<string, PayloadValue>;
+type SongPayload = Record<string, unknown>;
 
 interface SongDetails {
     id: number;
@@ -16,28 +15,29 @@ interface SongDetails {
     updated_at: string | null;
 }
 
+// Spec S13: shaped server-side — links are {label,url} pairs, never JSON.
+interface ArtistDisplay {
+    name: string;
+    fields: Array<{ label: string; value: string }>;
+    links: Array<{ label: string; url: string }>;
+}
+
 interface Submission {
     id: number;
-    version: number;
     track_title: string | null;
     payload: SongPayload;
     created_at: string | null;
+    // Spec S6: who created this submit.
     created_by: string | null;
-}
-
-interface ArtistDetails {
-    name: string;
-    fields: Array<{ label: string; value: string }>;
+    // Spec S11: only the creator may edit/delete it.
+    editable: boolean;
+    artists: ArtistDisplay[];
 }
 
 defineProps<{
     song: SongDetails;
     submissions: Submission[];
 }>();
-
-function isRecord(value: PayloadValue): value is Record<string, PayloadValue> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function isUrl(value: string): boolean {
     try {
@@ -48,60 +48,7 @@ function isUrl(value: string): boolean {
     }
 }
 
-function stringFields(value: Record<string, PayloadValue>): ArtistDetails['fields'] {
-    return Object.entries(value)
-        .filter(([, fieldValue]) => fieldValue !== null && fieldValue !== undefined && fieldValue !== '')
-        .map(([label, fieldValue]) => ({
-            label: label.replaceAll('_', ' '),
-            value: typeof fieldValue === 'string' ? fieldValue : stringify(fieldValue),
-        }));
-}
-
-function artistsFromText(value: string): ArtistDetails[] {
-    const sections = value.split(/(?=^\s*ARTIST\s+\d+)/im).filter((section) => section.trim());
-
-    return sections.map((section, index) => {
-        const fields: ArtistDetails['fields'] = [];
-        const lines = section.split(/\r?\n/);
-        const nameMatch = section.match(/^\s*Name:\s*\n\s*([^\n]+)/im);
-
-        for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
-            const label = lines[lineIndex].trim().replace(/:$/, '');
-            if (!label || label.toUpperCase().startsWith('ARTIST ') || label.includes('---')) continue;
-            if (!/^[A-Za-z][A-Za-z ]*$/.test(label) || !lines[lineIndex].trim().endsWith(':')) continue;
-
-            const fieldValue = lines.slice(lineIndex + 1).find((line) => line.trim())?.trim();
-            if (fieldValue) fields.push({ label, value: fieldValue });
-        }
-
-        return {
-            name: nameMatch?.[1]?.trim() || `Artist ${index + 1}`,
-            fields,
-        };
-    });
-}
-
-function artistsFor(payload: SongPayload): ArtistDetails[] {
-    if (Array.isArray(payload.artists)) {
-        return payload.artists.map((artist, index) => {
-            if (typeof artist === 'string') {
-                return { name: artist, fields: [] };
-            }
-
-            if (isRecord(artist)) {
-                const fields = stringFields(artist);
-                const name = fields.find((field) => ['name', 'artist name', 'artist_name'].includes(field.label.toLowerCase()))?.value;
-                return { name: name || `Artist ${index + 1}`, fields };
-            }
-
-            return { name: `Artist ${index + 1}`, fields: [{ label: 'Details', value: stringify(artist) }] };
-        });
-    }
-
-    return typeof payload.artists_info === 'string' ? artistsFromText(payload.artists_info) : [];
-}
-
-function stringify(value: PayloadValue): string {
+function stringify(value: unknown): string {
     if (typeof value === 'string') return value;
     if (value === null || value === undefined) return '—';
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
@@ -128,8 +75,15 @@ function formatDate(value: string | null): string {
     }).format(new Date(value));
 }
 
-const payloadFields = (payload: SongPayload) => Object.entries(payload)
-    .filter(([key, value]) => !['artists', 'artists_info'].includes(key) && value !== null && value !== undefined && value !== '');
+// Release fields only — artists are shaped on the server (spec S13).
+const payloadFields = (payload: SongPayload) =>
+    Object.entries(payload).filter(
+        ([key, value]) =>
+            !['artists', 'artists_info'].includes(key) &&
+            value !== null &&
+            value !== undefined &&
+            value !== '',
+    );
 
 defineOptions({
     layout: {
@@ -157,7 +111,11 @@ defineOptions({
                     </p>
                     <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ song.track_title || 'Untitled song' }}</h1>
                 </div>
-                <Badge variant="secondary">{{ song.submission_count }} {{ song.submission_count === 1 ? 'version' : 'versions' }}</Badge>
+                <!-- Spec S10: no "versions" wording in a submit's info. -->
+                <Badge variant="secondary">
+                    {{ song.submission_count }}
+                    {{ song.submission_count === 1 ? 'submission' : 'submissions' }}
+                </Badge>
             </div>
         </header>
 
@@ -172,10 +130,10 @@ defineOptions({
                     <details :open="index === 0" class="group">
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                             <div class="min-w-0">
-                                <p class="font-medium">Version {{ submission.version }} · {{ submission.track_title || song.track_title || 'Untitled song' }}</p>
+                                <!-- Spec S10: no "Version N" per submit. -->
+                                <p class="font-medium">{{ submission.track_title || song.track_title || 'Untitled song' }}</p>
                                 <p class="mt-1 text-sm text-muted-foreground">
                                     {{ formatDate(submission.created_at) }}
-                                    <!-- Spec S6: the history says who created the submit. -->
                                     <template v-if="submission.created_by">
                                         · Created by <span class="font-medium text-foreground">{{ submission.created_by }}</span>
                                     </template>
@@ -194,29 +152,54 @@ defineOptions({
                                 </div>
                             </dl>
 
-                            <section v-if="artistsFor(submission.payload).length" aria-label="Artists" class="mt-6 space-y-3">
+                            <section v-if="submission.artists.length" aria-label="Artists" class="mt-6 space-y-3">
                                 <h3 class="text-sm font-semibold">Artists</h3>
                                 <div class="grid gap-3 lg:grid-cols-2">
                                     <article
-                                        v-for="(artist, artistIndex) in artistsFor(submission.payload)"
+                                        v-for="(artist, artistIndex) in submission.artists"
                                         :key="`${artist.name}-${artistIndex}`"
                                         class="rounded-lg border bg-muted/20 p-4"
                                     >
                                         <h4 class="font-medium">{{ artist.name }}</h4>
                                         <dl v-if="artist.fields.length" class="mt-3 grid gap-3 sm:grid-cols-2">
                                             <div v-for="(field, fieldIndex) in artist.fields" :key="`${field.label}-${fieldIndex}`" class="min-w-0">
-                                                <dt class="text-xs font-medium text-muted-foreground">{{ labelFor(field.label) }}</dt>
+                                                <dt class="text-xs font-medium text-muted-foreground">{{ field.label }}</dt>
                                                 <dd v-if="isUrl(field.value)" class="mt-1 break-all text-sm">
                                                     <a :href="field.value" target="_blank" rel="noopener noreferrer" class="text-primary underline underline-offset-4">{{ field.value }}</a>
                                                 </dd>
                                                 <dd v-else class="mt-1 whitespace-pre-wrap break-words text-sm">{{ field.value }}</dd>
                                             </div>
                                         </dl>
+
+                                        <!-- Spec S13: platform links as real anchors, never JSON. -->
+                                        <div v-if="artist.links.length" class="mt-4 border-t pt-3">
+                                            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                                Platform links
+                                            </p>
+                                            <ul class="space-y-1.5">
+                                                <li
+                                                    v-for="link in artist.links"
+                                                    :key="link.url"
+                                                    class="flex flex-wrap items-baseline gap-2 text-sm"
+                                                >
+                                                    <span class="shrink-0 text-muted-foreground">{{ link.label }}</span>
+                                                    <a
+                                                        :href="link.url"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        class="text-primary underline underline-offset-4 break-all"
+                                                    >{{ link.url }}</a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </article>
                                 </div>
                             </section>
 
-                            <p v-if="payloadFields(submission.payload).length === 0 && artistsFor(submission.payload).length === 0" class="text-sm text-muted-foreground">
+                            <p
+                                v-if="payloadFields(submission.payload).length === 0 && submission.artists.length === 0"
+                                class="text-sm text-muted-foreground"
+                            >
                                 This submission has no additional form details.
                             </p>
                         </CardContent>

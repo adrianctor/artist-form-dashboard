@@ -82,6 +82,35 @@ Auditado:
 - Show (historial por canción): acotado a las versions de una canción — sin carga global.
 - Migración S4 agrega los índices faltantes (`songs.created_at`, `songs.updated_at`, `song_submissions.created_at`, `song_submissions.created_by`).
 
+### S10 — Sin "Version N" en la info de un submit
+
+> "eso de version 1 quitalo porfa, ningún submit debe llevar version cuando uno abre la info de un submit"
+
+Al abrir el detalle (Show), cada entrada del historial **no** muestra "Version N ·". La cabecera tampoco dice "versions" — el contador pasa a "N submissions" (coherente con el título "Submission history"). Las columnas de Songs/Calendar no se tocan.
+
+### S11 — Editar/borrar un submit: solo el que lo envió
+
+> "no está permitiendo editar ni eliminar un submit, solo lo puede editar el que lo creó no los artistas a los que les aparece el submit, ojo que que lo crea puede estar dentro de los mismos artistas entonces esa sería la unica excepción para editar y eliminar dentro de los artistas, generalmente quien lo crea es parte de la lista de artistas del submit entonces tienes que permitir editar y borrar solo al que envio el submit."
+
+- Nuevas rutas: `GET /submissions/{id}/edit`, `PATCH /submissions/{id}`, `DELETE /submissions/{id}` (mismo grupo auth/verified/profile.complete que Songs).
+- **Autorización estricta**: `created_by === user.id` — los artistas que pueden VER el submit (por email en `artist_emails`) **no** lo pueden editar/borrar; solo el que lo envió (que normalmente es uno de los artistas). Si no puede ver la canción → 404; si puede ver pero no creó → 403. (Sin bypass de admin — "solo al que envió el submit".)
+- **Edit**: reutiliza `ReleaseForm.vue` con prop `editSubmission` (prefill de todo el payload: publishing, release info, cover, artist blocks con links; sin disclaimer; botón "Save changes"; envía PATCH). Server: misma validación que store (`validatedRelease` extraído), actualiza `payload` + `track_title` de la canción y **recalcula `artist_emails`** (unión de todos los submissions) → redirect a Show.
+- **Delete**: borra el submission; si era el último de la canción → borra la canción (redirect a Songs); si no → recalcula `submission_count` + `artist_emails` (redirect a Show). Confirmación en el navegador (`window.confirm`).
+- Botones Edit/Delete en cada entrada del historial, solo visibles si `editable` (lo calcula el servidor).
+
+### S12 — Correo con el estilo de la página
+
+> "además los correos se ven horrible, si tienen html y estilos como se muestran en la pagina? si no es asi aplicale el estilo como se ve en la pagina."
+
+El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo de la página** (todo inline, tables para compatibilidad de email): fondo `#000`, tarjeta `#0a0a0a` con borde sutil y radio 20px, título uppercase con letter-spacing, labels en gris `#a1a1aa` (uppercase,11px), valores en blanco, fecha de envío, artistas en tarjetas internas con borde, footer con nota de paridad con el historial. Envelope (to/cc/replyTo) sin cambios. Los tests existentes (valores presentes) se mantienen.
+
+### S13 — Links de artistas como UI, nunca JSON
+
+> "por ultimo para la pagina como para el correo los links de cada artista no los pintes en json mejora su ui ux de acuerdo al estilo de la página"
+
+- **Show**: el servidor transforma `payload.artists` en estructura (`{name, fields:[{label,value}], links:[{label,url}]}`) — el `links` sale del string JSON y se pinta como lista: label de plataforma (Spotify, Apple Music, ...) + ancla clickeable estilo página (`text-primary underline`, `word-break`), nunca `JSON.stringify`. Testeable a nivel de props.
+- **Correo**: cada link como fila "Plataforma — ancla clickeable" (color de acento de la página, underline, word-break); los valores URL del release (audio_link, photo, ...) también se vuelven anclas. Test: el mail contiene `href="..."` + label y **no** contiene JSON (`{"spotify"`).
+
 ## Tasks
 
 | ID | Specs | Route | Status | Commit |
@@ -90,13 +119,20 @@ Auditado:
 | T2 | S6 | inline | done | (commit) |
 | T3 | S3, S4, S2 | inline | done | (commit) |
 | T4 | S7 | inline | done | (commit) |
-| T5 | S8, S9 | inline | pending | — |
+| T5 | S8, S9 | inline | done | (ver L6) |
+| T6 | S10, S13 | inline | done | (commit) |
+| T7 | S11 | inline | pending | — |
+| T8 | S12, S13 | inline | pending | — |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
 - T2: migración (`song_submissions.created_by`, `songs.artist_emails` + backfill + índices de S4/S9) + `SongSubmissionService` (createdBy + artist_emails) + `scopeVisibleTo` ampliado + `show()` vía scope + "Created by" en Show.vue + tests nuevos (creador ve, segundo artista ve, desconocido no, Show incluye created_by).
 - T3: calendario — controller con `month/day/page` + aggregate por día + `paginate(50)` del día + `visibleTo` + `Calendar.vue` server-driven (mes/día/paginación) + copy "form submits" + `CalendarTest` reescrito (todos acceden, mes acotado, día paginado, solo-suyas para user).
 - T4: Show completo + correo genérico — test de paridad Show (payload completo → todos los campos) + `ReleaseFormSubmitted` render genérico + test "todas las claves del payload en el mail".
-- T5: verificación final — Mailpit E2E (envío → API → UI 200), suite completa, `vue-tsc`, build, E2E navegador-sim (login → form → redirect calendario → track visible para creador y artista), doc de cierre.
+- T5: verificación final — Mailpit E2E (envío → API → UI 200) + suite/vue-tsc/build (cerrado en L6).
+- T6: Show sin "Version N" + artistas/links server-side (`SongPageController::show` mapea artists a `{name, fields, links}`) + Show.vue pinta links como anclas estilo página + `editable` por submission + tests.
+- T7: rutas edit/update/destroy + `ReleaseFormController` (`validatedRelease` extraído de store, `findEditableSubmission` con vista→404 y creador→403) + `SongSubmissionService::recomputeArtistEmails` + botones Edit/Delete en Show (confirm) + `ReleaseForm.vue` con prop `editSubmission` (prefill, sin disclaimer, "Save changes", PATCH) + `SubmissionEditDeleteTest` (~10 tests).
+- T8: `ReleaseFormSubmitted` rediseñado al estilo de la página (dark, cards, labels uppercase gris, anclas de accent) + tests de estilo y de links-ancla (no JSON).
+- T9: verificación final (suite, vue-tsc, build, E2E edit/delete por curl) + cierre del doc.
 
 ## Log
 
@@ -134,3 +170,18 @@ L1 — 2026-11-19, petición original del usuario (verbatim):
 
 1. **`ReleaseFormSubmitted::renderBody` → render genérico** (S7): recorre TODAS las claves no-vacias del payload (label `ucwords` por key) + cada artista con TODOS sus campos (incl. `links` platform→url) — paridad con Show garantizada por construcción (si el form gana un campo, el correo lo lleva sin tocar código). Legacy `artists_info` (string) se renderiza como bloque `<pre>`. `publishing` sigue mapeado a "Afrodise"/"I don't have this".
 2. **Tests**: `email_contains_every_non_empty_payload_field` (valores PARITY en writers/country/genre + campos de artista presentes) + `show_delivers_the_full_submission_payload` (payload completo con links en los props de Show — el song lleva `artist_emails` para que el artista acceda, S6). Suite **139/714** (tras corregir: label "Bio" y artist_emails en el test de paridad).
+
+
+L6 — 2026-11-19, cierre de T5 + nuevos requisitos del usuario (verbatim):
+
+> "eso de version 1 quitalo porfa, ningún submit debe llevar version cuando uno abre la info de un submit, además no está permitiendo editar ni eliminar un submit, solo lo puede editar el que lo creó no los artistas a los que les aparece el submit, ojo que que lo crea puede estar dentro de los mismos artistas entonces esa sería la unica excepción para editar y eliminar dentro de los artistas, generalmente quien lo crea es parte de la lista de artistas del submit entonces tienes que permitir editar y borrar solo al que envio el submit. Además los correos se ven horrible, si tienen html y estilos como se muestran en la pagina? si no es asi aplicale el estilo como se ve en la pagina. y por ultimo para la pagina como para el correo los links de cada artista no los pintes en json mejora su ui ux de acuerdo al estilo de toda la pagina."
+
+T5 quedó verificado en el turno anterior (Mailpit: UI 200 + API con mensajes; E2E de envío del form → calendario con el track del día).
+
+### L7 — T6: Show sin "Version N" + artistas/links server-side (2026-11-19)
+
+1. **S10**: `SongPageController::show` ya no emite `version`; Show.vue sin "Version N ·" por entrada y la cabecera dice "**N submissions**" (antes "N versions"). Test: `missing('submissions.0.version')`.
+2. **S13 (página)**: nuevo `artistsForDisplay(payload)` en el controller — `payload.artists` → `[{name, fields:[{label,value}], links:[{label,url}]}]`; `links` (antes JSON stringified en el cliente) sale como pares, plataformas vacías descartadas, `name` es el encabezado de la tarjeta (no se duplica como fila). Show.vue pinta cada link como **ancla** (`text-primary underline break-all`) con label de plataforma — nunca JSON.
+3. **S11 (data)**: cada submission lleva `editable = (created_by !== null && created_by === user.id)` — los botones vienen en T7.
+4. Gotcha de test: `AssertableInertia::where` pasa una **Collection** al closure (no array) — usar `pluck()/contains()`.
+5. Tests: `SongsPageTest` 6/6 (paridad de payload + shape de links: name único, sin fila "Links", Spotify pair exacto). Suite **152/789**, vue-tsc 0, build OK.
