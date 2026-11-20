@@ -14,7 +14,7 @@ Flujo: **`git push origin develop`** → GitHub Actions (tests + build + rsync +
 El repo es público: **no puede contener contraseñas reales.**
 
 - `RolesAndUsersSeeder` ya no hardcodea la contraseña: usa `ADMIN_PASSWORD` de `.env`; si no está seteada en producción, genera una aleatoria y la escribe una sola vez en `storage/logs/laravel.log`.
-- **Si el admin de producción ya existe con `REDACTED-LOCAL-DEV-PASSWORD`**, rotala después del primer deploy: seteá `ADMIN_PASSWORD` en el `.env` del servidor y corré `php artisan db:seed --class=RolesAndUsersSeeder --force`.
+- **Si el admin de producción quedó con una contraseña antigua conocida**, rotala después del primer deploy: seteá `ADMIN_PASSWORD` en el `.env` del servidor y corré `php artisan db:seed --class=RolesAndUsersSeeder --force`.
 - Credenciales de BD, SMTP y SSH **solo** viven en: `.env` del servidor + secrets de GitHub. Nunca en commits.
 
 ---
