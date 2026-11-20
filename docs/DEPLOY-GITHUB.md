@@ -66,7 +66,7 @@ hPanel → **Databases → MySQL** → **Create New Database**:
 |---|---|
 | Database name | `artist_dash` (hPanel la muestra como `uXXXXXXX_artist_dash`) |
 | User name | `artist_dash` |
-| Password | `REDACTED-DB-PASSWORD` |
+| Password | `<TU_CONTRASENA_BD>` |
 | Host | `localhost` |
 
 Después: **Add user to database** → marcá **ALL PRIVILEGES** → guardar.
@@ -76,7 +76,7 @@ Después: **Add user to database** → marcá **ALL PRIVILEGES** → guardar.
 
   ```bash
   mysqldump -u WP_USER -p WP_BASE_DE_WORDPRESS 'dash_*' > dash_old.sql
-  mysql -u artist_dash -p'REDACTED-DB-PASSWORD' uXXXXXXX_artist_dash < dash_old.sql
+  mysql -u artist_dash -p'<TU_CONTRASENA_BD>' uXXXXXXX_artist_dash < dash_old.sql
   ```
 
 ---
@@ -129,7 +129,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_DATABASE=uXXXXXXX_artist_dash
 DB_USERNAME=artist_dash
-DB_PASSWORD=REDACTED-DB-PASSWORD
+DB_PASSWORD=<TU_CONTRASENA_BD>
 DB_PREFIX=dash_
 
 LOG_CHANNEL=stack
