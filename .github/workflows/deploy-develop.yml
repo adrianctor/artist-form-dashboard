@@ -114,6 +114,12 @@ jobs:
             --exclude='/index.php' \
             --exclude='/.htaccess' \
             --exclude='/build' \
+            --exclude='/logo.png' \
+            --exclude='/favicon.ico' \
+            --exclude='/favicon-32.png' \
+            --exclude='/favicon-192.png' \
+            --exclude='/apple-touch-icon.png' \
+            --exclude='/robots.txt' \
             ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
       - name: Finalize on server (key + migrate + caches)
@@ -128,6 +134,7 @@ jobs:
             set -e
             cd '$DEPLOY_PATH'
             grep -q '^APP_KEY=base64:' .env || php artisan key:generate --force
+            for f in public/*; do b=\$(basename \"\$f\"); if [ \"\$b\" != storage ]; then ln -sfn \"\$f\" \"\$b\"; fi; done
             php artisan migrate --force
             php artisan config:cache
             php artisan view:cache
