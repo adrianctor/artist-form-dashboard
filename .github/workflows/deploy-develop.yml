@@ -111,9 +111,9 @@ jobs:
             --exclude='storage/framework/sessions/*' \
             --exclude='storage/framework/views/*' \
             --exclude='public/storage' \
-            --exclude='index.php' \
-            --exclude='.htaccess' \
-            --exclude='build' \
+            --exclude='/index.php' \
+            --exclude='/.htaccess' \
+            --exclude='/build' \
             ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
       - name: Finalize on server (key + migrate + caches)
