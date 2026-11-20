@@ -182,6 +182,22 @@ class ReleaseFormEmailTest extends TestCase
         });
     }
 
+    public function test_submit_recipient_can_be_overridden_via_config(): void
+    {
+        // The envelope target is env-driven (MAIL_SUBMIT_TO) so production
+        // can point to a monitored mailbox while the default keeps the
+        // spec address info@sunsetgathering.com.
+        Mail::fake();
+        config(['mail.submit_recipient' => 'monitor@djcare.world']);
+
+        $this->submitForm();
+
+        Mail::assertSent(ReleaseFormSubmitted::class, function (ReleaseFormSubmitted $mail) {
+            return $mail->hasTo('monitor@djcare.world')
+                && ! $mail->hasTo('info@sunsetgathering.com');
+        });
+    }
+
     public function test_email_is_responsive_on_narrow_screens(): void
     {
         // Spec: the email must adapt to phones — mobile media query, a

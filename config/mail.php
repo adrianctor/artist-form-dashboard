@@ -115,4 +115,17 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Release form submit recipient
+    |--------------------------------------------------------------------------
+    |
+    | Where ReleaseFormSubmitted notifications are delivered. The default
+    | keeps the spec address; MAIL_SUBMIT_TO overrides it in environments
+    | where that mailbox is not yet available.
+    |
+    */
+
+    'submit_recipient' => env('MAIL_SUBMIT_TO', 'info@sunsetgathering.com'),
+
 ];

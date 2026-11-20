@@ -33,7 +33,7 @@ class ReleaseFormSubmitted extends Mailable
         // All addresses go through the constructor so they are normalized
         // to Address objects (direct property assignment skips that).
         return new Envelope(
-            to: ['info@sunsetgathering.com'],
+            to: [(string) config('mail.submit_recipient')],
             cc: $emails,
             replyTo: $emails !== [] ? [$emails[0]] : [],
             subject: 'Music Release Form: '.($this->payload['track_title'] ?? 'New submission'),
