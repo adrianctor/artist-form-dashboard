@@ -69,15 +69,15 @@ Branch: `feat/dashboard-mvp` · Runner: `docker compose exec -T app php artisan 
 
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
-| T1 | S5 | inline | done | 38de594 |
-| T2 | S5 | inline | done | 38de594 |
-| T3 | S5, S6 | inline | done | 22a64ea |
-| T4 | S4 | inline | done | fc70a5b |
-| T5 | S1, S3, S4 | inline | done | 7eb9782 |
-| T6 | S1, S3 | inline | done | e0d3f4b |
-| T7 | S2 | inline | done | 3a60a44 |
-| T8 | S7 | inline | done | 0fcceec |
-| T9 | S1, S7 | inline | done | 885ac79 |
+| T1 | S5 | inline | done | 327d0e4 |
+| T2 | S5 | inline | done | 327d0e4 |
+| T3 | S5, S6 | inline | done | a94f18a |
+| T4 | S4 | inline | done | 9aeed09 |
+| T5 | S1, S3, S4 | inline | done | c87147a |
+| T6 | S1, S3 | inline | done | 4efd602 |
+| T7 | S2 | inline | done | 18316a8 |
+| T8 | S7 | inline | done | d7de836 |
+| T9 | S1, S7 | inline | done | d179aa4 |
 
 - T1: migración `artist_profiles` + modelo + relación `User::artistProfile` + `hasCompleteArtistProfile()` + tests de completitud (RED→GREEN).
 - T2: middleware `EnsureArtistProfileComplete` + alias + aplicación en todos los grupos authed (web/songs/users/calendar/settings/release-form) + tests (user incompleto → redirect my-profile; completo → pasa; admin → pasa).
@@ -109,7 +109,7 @@ L1 — 2026-11-18, petición original del usuario (verbatim, sin el bloque HTML 
 2. **Página `MyProfile.vue`**: campos de la sección artist del HTML (artist_name, real_name, role, country, city, estate, photo, bio) + radio cards **ARTIST PROFILE STATUS** (New/Existing, misma copy y estilo `#39d353` del form) + grid de 12 platform links (3 primeros marcados `*` si Existing). Inertia `Form` + Wayfinder (`wayfinder:generate --with-form` — sin `--with-form` rompe `.form()` de todas las páginas).
 3. **Menú**: item **My profile** (icono User) en `UserMenuContent.vue` debajo de Settings — lo reusan NavUser y AppHeader. Spec S6.
 4. **Gotcha vue-tsc**: `placeholder="https://..."` (con `//` + `...`) en atributos estáticos rompe el parser del template — `errors`/`processing` del `v-slot` y variables de `v-for` dejan de resolver desde ese punto (TS2304 en cadena). Fix: quitar `//`+`...` de placeholders (`"https://"` solo también falla; `"Link URL"` OK).
-5. Tests: `MyProfileTest` (6) RED→GREEN. Suite: **106 tests / 477 assertions**, `vue-tsc` 0 errores, build OK (en `afd-vite`), E2E `GET /my-profile` → `component: MyProfile`. Commit `22a64ea`.
+5. Tests: `MyProfileTest` (6) RED→GREEN. Suite: **106 tests / 477 assertions**, `vue-tsc` 0 errores, build OK (en `afd-vite`), E2E `GET /my-profile` → `component: MyProfile`. Commit `a94f18a`.
 
 ### L4 — T4: endpoint de búsqueda de artistas (2026-11-19)
 
@@ -149,7 +149,7 @@ El form interno (T5) dejó sin consumidores al link externo: eliminados `form_ur
 
 ### L10 — Cierre de la feature (2026-11-19)
 
-Los 9 tasks (T1-T9) completados en 9 commits sobre `feat/dashboard-mvp` (38de594..885ac79). Verificación final: **126 tests / 555 assertions**, `vue-tsc` 0 errores, `npm build` OK, E2E (login → ReleaseForm/MyProfile/artist-search 200).
+Los 9 tasks (T1-T9) completados en 9 commits sobre `feat/dashboard-mvp` (327d0e4..d179aa4). Verificación final: **126 tests / 555 assertions**, `vue-tsc` 0 errores, `npm build` OK, E2E (login → ReleaseForm/MyProfile/artist-search 200).
 
 **Pendiente del usuario (no bloquea):**
 1. **Template del email** (S2): el cuerpo actual es un placeholder estructurado con todos los campos — cuando mandes el template que tenías (EmailJS), lo enchufamos en `ReleaseFormSubmitted::content()`.

@@ -143,11 +143,11 @@ El mailable actual es texto plano con mínimos estilos. Rediseño con **estilo d
 | T3 | S3, S4, S2 | inline | done | (commit) |
 | T4 | S7 | inline | done | (commit) |
 | T5 | S8, S9 | inline | done | (ver L6) |
-| T6 | S10, S13 | inline | done | 67c6a39 |
-| T7 | S11 | inline | done | 46b616a |
-| T8 | S12, S13 | inline | done | 8678955 |
+| T6 | S10, S13 | inline | done | d6d555e |
+| T7 | S11 | inline | done | a86d84d |
+| T8 | S12, S13 | inline | done | ac426a4 |
 | T9 | verificación final | inline | done | (commit) |
-| T10 | S14, S15, S16 | inline | done | 7933661, bbb7ed6 |
+| T10 | S14, S15, S16 | inline | done | 522f532, 86b9866 |
 
 - T1: form UX — redirect a `/calendar` + `Inertia::flash` + errores 422 visibles + quitar success box; icono FileMusic en sidebar; Calendar visible para todos en sidebar (S2 sidebar); tests actualizados (`ReleaseFormSubmitTest`, `DashboardTest` si aplica).
 - T2: migración (`song_submissions.created_by`, `songs.artist_emails` + backfill + índices de S4/S9) + `SongSubmissionService` (createdBy + artist_emails) + `scopeVisibleTo` ampliado + `show()` vía scope + "Created by" en Show.vue + tests nuevos (creador ve, segundo artista ve, desconocido no, Show incluye created_by).
@@ -252,10 +252,10 @@ T5 quedó verificado en el turno anterior (Mailpit: UI 200 + API con mensajes; E
 - `SongPageController::index`: eager `submissions` acotado, unión de artistas, `created_by` del primer submit, filtro `?q=` LIKE sobre song_code/track_title con `withQueryString()`.
 - Se elimina `submission_count` de props de index/show/calendar/recentSongs (UI actualizada en Index/Show/Calendar/Dashboard).
 - `DashboardController::recentSubmissions` (últimos10 visibles, `whereIn` sobre el scope + `latest(id)`); `SubmissionsChart` con `hasActivity` y estado vacío; lista `Latest submissions` con `max-h-72 overflow-y-auto`.
-- E2E HTTP: `/dashboard` → recentSongs sin submission_count, recentSubmissions con datos, 30 días en submissionsDaily; `/songs` → 18 registros, página 1 de 2, keys artists/created_by; `?q=needle` → total 0 y q reflejado. Commit `7933661`.
+- E2E HTTP: `/dashboard` → recentSongs sin submission_count, recentSubmissions con datos, 30 días en submissionsDaily; `/songs` → 18 registros, página 1 de 2, keys artists/created_by; `?q=needle` → total 0 y q reflejado. Commit `522f532`.
 
 ### L12 — T10b: correo responsive (2026-11-19)
 
 > "revisar y arreglar la responsividad del correo de envío de la canción"
 
-- `ReleaseFormSubmitted`: bloque `<style>` con media query 480px (card/labels/h1/artist-card), se quita `white-space:nowrap` de los labels para que envuelvan en pantallas chicas; card fluida 640px ya existente. Test `test_email_is_responsive_on_narrow_screens`. Commit `bbb7ed6`.
+- `ReleaseFormSubmitted`: bloque `<style>` con media query 480px (card/labels/h1/artist-card), se quita `white-space:nowrap` de los labels para que envuelvan en pantallas chicas; card fluida 640px ya existente. Test `test_email_is_responsive_on_narrow_screens`. Commit `86b9866`.
