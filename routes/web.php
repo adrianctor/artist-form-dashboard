@@ -29,6 +29,9 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     // Spec S4: artist search for the release form's autofill.
     Route::get('artist-search', [ArtistSearchController::class, 'index'])->name('artist-search');
 
+    // Spec S3 (profile-writers-publishing): profile list for the writers select.
+    Route::get('profiles', [ArtistProfileController::class, 'index'])->name('profiles.index');
+
     // Spec S1: in-app Music Release Form (replaces WordPress).
     Route::get('release-form', [ReleaseFormController::class, 'show'])->name('release-form');
     Route::post('release-form', [ReleaseFormController::class, 'store'])->name('release-form.store');

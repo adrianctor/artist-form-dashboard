@@ -105,6 +105,25 @@ class ArtistSearchTest extends TestCase
             ->assertJsonCount(0);
     }
 
+    public function test_profiles_endpoint_lists_real_names_for_the_writers_select(): void
+    {
+        // Spec S3 (profile-writers-publishing): the writers select reads
+        // every profile's real name from GET /profiles.
+        $this->makeCompleteArtist('Aaron Sevilla', 'aaron@example.com');
+        $auth = User::factory()->create();
+
+        $this->actingAs($auth)
+            ->getJson('/profiles')
+            ->assertOk()
+            ->assertJsonStructure(['*' => ['id', 'real_name', 'artist_name']])
+            ->assertJsonFragment(['real_name' => 'Aaron Sevilla']);
+    }
+
+    public function test_profiles_endpoint_requires_auth(): void
+    {
+        $this->getJson('/profiles')->assertUnauthorized();
+    }
+
     public function test_result_shape_contains_profile_fields_for_autofill(): void
     {
         $this->makeCompleteArtist('Aaron Sevilla', 'aaron@example.com');

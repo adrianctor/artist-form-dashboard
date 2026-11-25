@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ArtistProfile;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -24,6 +25,21 @@ class ArtistProfileController extends Controller
                 'email' => $request->user()->email,
             ],
         ]);
+    }
+
+    /**
+     * Spec S3 (profile-writers-publishing): every profile's real name for
+     * the writers select of the release form (plus the profile identity so
+     * the row can be rendered).
+     */
+    public function index(): JsonResponse
+    {
+        $profiles = ArtistProfile::query()
+            ->where('real_name', '!=', '')
+            ->orderBy('real_name')
+            ->get(['id', 'real_name', 'artist_name']);
+
+        return response()->json($profiles);
     }
 
     /**

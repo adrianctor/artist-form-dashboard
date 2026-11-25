@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\RolesAndUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,7 +22,7 @@ class MyProfileTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RolesAndUsersSeeder::class);
+        $this->seed(RolesAndUsersSeeder::class);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 

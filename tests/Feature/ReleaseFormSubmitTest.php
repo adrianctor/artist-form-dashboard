@@ -20,14 +20,16 @@ class ReleaseFormSubmitTest extends TestCase
     private function validPayload(array $override = []): array
     {
         return array_merge([
-            'publishing' => 'afrodise',
             'track_title' => 'Aaron Sevilla - Ya Zamani (Original Mix)',
             'cover_artwork_creative_direction' => 'Warm sunset colors.',
             'audio_link' => 'https://drive.google.com/file/master.wav',
             'genre' => 'Organic House',
             'country_recording' => 'Argentina',
             'audio_style' => 'Vocal',
-            'writers' => 'Aaron Sevilla',
+            // Spec S3: writers are rows of {name, role}.
+            'writers' => [
+                ['name' => 'Aaron Sevilla', 'role' => 'Primary'],
+            ],
             'explicit_content' => 'No',
             'is_cover' => 'No',
             'original_song_link' => '',
@@ -37,13 +39,17 @@ class ReleaseFormSubmitTest extends TestCase
                     'name' => 'Aaron Sevilla',
                     'real_name' => 'Aaron Sevilla Lopez',
                     'email' => 'owner.artist@example.com',
-                    'role' => 'Producer',
+                    'role' => 'Primary',
                     'country' => 'Argentina',
                     'city' => 'Buenos Aires',
                     'estate' => 'CABA',
                     'photo' => 'https://drive.google.com/photo.jpg',
                     'bio' => 'DJ since 2015.',
                     'status' => 'New Artist',
+                    // Spec S5: publishing lives per artist now.
+                    'publishing' => 'AFRODISE',
+                    'publishing_custom' => '',
+                    'ipi_number' => '',
                     'links' => [],
                 ],
             ],
@@ -79,35 +85,108 @@ class ReleaseFormSubmitTest extends TestCase
         $this->assertNotNull($owner);
         $this->assertSame($owner->id, $song->user_id);
 
-        // Publishing rides inside the payload (spec S3).
+        // Spec S5: publishing rides inside the payload per artist.
         $payload = $song->submissions()->first()->payload;
-        $this->assertSame('afrodise', $payload['publishing']);
+        $this->assertSame('AFRODISE', $payload['artists'][0]['publishing']);
     }
 
-    public function test_publishing_none_option_is_accepted(): void
+    public function test_artist_publishing_options_are_accepted(): void
     {
         $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['artists'][0]['publishing'] = 'COPYRIGHT CONTROL';
 
         $this->actingAs($user)
-            ->post('/release-form', $this->validPayload([
-                'publishing' => 'none',
-                'artists' => [],
-            ]))
+            ->post('/release-form', $payload)
             ->assertRedirect(route('calendar'));
 
-        $payload = Song::first()->submissions()->first()->payload;
-        $this->assertSame('none', $payload['publishing']);
+        $stored = Song::first()->submissions()->first()->payload;
+        $this->assertSame('COPYRIGHT CONTROL', $stored['artists'][0]['publishing']);
     }
 
-    public function test_invalid_publishing_value_is_rejected(): void
+    public function test_invalid_artist_publishing_value_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['artists'][0]['publishing'] = 'other';
+
+        $this->actingAs($user)
+            ->from(route('release-form'))
+            ->post('/release-form', $payload)
+            ->assertRedirect(route('release-form'))
+            ->assertSessionHasErrors('artists.0.publishing');
+    }
+
+    public function test_other_publishing_requires_the_custom_company_name(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['artists'][0]['publishing'] = 'OTHER';
+        $payload['artists'][0]['publishing_custom'] = '';
+
+        $this->actingAs($user)
+            ->from(route('release-form'))
+            ->post('/release-form', $payload)
+            ->assertRedirect(route('release-form'))
+            ->assertSessionHasErrors('artists.0.publishing_custom');
+
+        $payload['artists'][0]['publishing_custom'] = 'Sunset Publishing LLC';
+        $this->actingAs($user)
+            ->post('/release-form', $payload)
+            ->assertRedirect(route('calendar'));
+
+        $stored = Song::first()->submissions()->first()->payload;
+        $this->assertSame('Sunset Publishing LLC', $stored['artists'][0]['publishing_custom']);
+    }
+
+    public function test_missing_writer_role_is_rejected(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->from(route('release-form'))
-            ->post('/release-form', $this->validPayload(['publishing' => 'other']))
+            ->post('/release-form', $this->validPayload([
+                'writers' => [['name' => 'Aaron Sevilla', 'role' => 'Something Else']],
+            ]))
             ->assertRedirect(route('release-form'))
-            ->assertSessionHasErrors('publishing');
+            ->assertSessionHasErrors('writers.0.role');
+    }
+
+    public function test_empty_writers_array_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('release-form'))
+            ->post('/release-form', $this->validPayload(['writers' => []]))
+            ->assertRedirect(route('release-form'))
+            ->assertSessionHasErrors('writers');
+    }
+
+    public function test_invalid_artist_role_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['artists'][0]['role'] = 'Producer';
+
+        $this->actingAs($user)
+            ->from(route('release-form'))
+            ->post('/release-form', $payload)
+            ->assertRedirect(route('release-form'))
+            ->assertSessionHasErrors('artists.0.role');
+    }
+
+    public function test_bio_over_500_characters_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['artists'][0]['bio'] = str_repeat('a', 501);
+
+        $this->actingAs($user)
+            ->from(route('release-form'))
+            ->post('/release-form', $payload)
+            ->assertRedirect(route('release-form'))
+            ->assertSessionHasErrors('artists.0.bio');
     }
 
     public function test_missing_track_title_is_rejected(): void

@@ -32,6 +32,9 @@ type ArtistBlock = {
     bio: string;
     status: '' | 'New Artist' | 'Existing Artist';
     links: ArtistLinks;
+    publishing: '' | 'AFRODISE' | 'COPYRIGHT CONTROL' | 'OTHER';
+    publishingCustom: string;
+    ipiNumber: string;
 };
 
 type SearchHit = {
@@ -48,7 +51,31 @@ type SearchHit = {
     bio: string;
     status: 'New Artist' | 'Existing Artist';
     links: ArtistLinks;
+    publishing: 'AFRODISE' | 'COPYRIGHT CONTROL' | 'OTHER' | null;
+    publishing_custom: string | null;
+    ipi_number: string | null;
 };
+
+// Spec S3 (profile-writers-publishing): one writer row = profile real name
+// select + "Rol del escritor" (3-value select). n rows, add/remove.
+type WriterRow = { name: string; role: '' | 'Primary' | 'Featuring' | 'Remix' };
+
+type ProfileOption = {
+    id: number;
+    real_name: string;
+    artist_name: string;
+};
+
+// Specs S2 + S3: the artist role and the writer role share the same
+// three values (the writer role has NO free-text option).
+const ROLE_OPTIONS = ['Primary', 'Featuring', 'Remix'] as const;
+
+const PUBLISHING_OPTIONS = [
+    { value: 'AFRODISE', label: 'AFRODISE' },
+    { value: 'COPYRIGHT CONTROL', label: 'COPYRIGHT CONTROL' },
+    { value: 'OTHER', label: 'OTHER / CUSTOM PUBLISHING' },
+] as const;
+
 
 const LINK_FIELDS = [
     { key: 'spotify', label: 'Spotify Artist Link', core: true },
@@ -92,8 +119,8 @@ const errorList = computed(() => [
     ...new Set(Object.values(errors.value).flat().filter(Boolean)),
 ]);
 
-// Spec S3: Publishing — Afrodise by default, English "No cuento con esto".
-const publishing = ref<'afrodise' | 'none'>('afrodise');
+// Spec S3 (profile-writers-publishing): publishing lives PER ARTIST now —
+// the old global radio (Afrodise / I don't have this) is gone.
 
 const release = reactive({
     track_title: '',
@@ -102,12 +129,17 @@ const release = reactive({
     genre: '',
     country_recording: '',
     audio_style: '' as '' | 'Vocal' | 'Instrumental',
-    writers: '',
     explicit_content: '' as '' | 'Yes' | 'No',
     is_cover: '' as '' | 'Yes' | 'No',
     original_song_link: '',
     original_track_credits: '',
 });
+
+// Spec S3: writers as a dynamic list (min 1 row), replacing the textarea.
+const writers = ref<WriterRow[]>([{ name: '', role: '' }]);
+
+// Spec S3: every profile's real name for the writers select.
+const profileOptions = ref<ProfileOption[]>([]);
 
 const artistCount = ref<string>('');
 const artists = ref<ArtistBlock[]>([]);
@@ -133,7 +165,34 @@ function emptyArtist(): ArtistBlock {
         bio: '',
         status: '',
         links,
+        publishing: '',
+        publishingCustom: '',
+        ipiNumber: '',
     };
+}
+
+/* ---------- Writers list (spec S3) ---------- */
+
+function addWriter() {
+    writers.value.push({ name: '', role: '' });
+}
+
+function removeWriter(index: number) {
+    if (writers.value.length <= 1) return;
+    writers.value.splice(index, 1);
+}
+
+async function loadProfileOptions() {
+    try {
+        const res = await fetch('/profiles', {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
+        if (!res.ok) return;
+        profileOptions.value = (await res.json()) as ProfileOption[];
+    } catch {
+        /* network error → keep the select empty */
+    }
 }
 
 function onArtistCountChange() {
@@ -184,7 +243,11 @@ function applySearchHit(index: number, hit: SearchHit) {
     artist.name = hit.artist_name;
     artist.realName = hit.real_name;
     artist.email = hit.email;
-    artist.role = hit.role;
+    // Spec S2: a legacy role outside the 3-value select starts empty so
+    // the user picks one of Primary / Featuring / Remix.
+    artist.role = ROLE_OPTIONS.includes(hit.role as (typeof ROLE_OPTIONS)[number])
+        ? hit.role
+        : '';
     artist.country = hit.country;
     artist.city = hit.city;
     artist.estate = hit.estate;
@@ -194,6 +257,10 @@ function applySearchHit(index: number, hit: SearchHit) {
     for (const f of LINK_FIELDS) {
         artist.links[f.key] = hit.links?.[f.key] ?? '';
     }
+    // Spec S5: publishing/IPI autofill from the profile, editable after.
+    artist.publishing = hit.publishing ?? '';
+    artist.publishingCustom = hit.publishing_custom ?? '';
+    artist.ipiNumber = hit.ipi_number ?? '';
     artist.searchQuery = hit.artist_name;
     artist.searchOpen = false;
     artist.searchResults = [];
@@ -216,11 +283,17 @@ function validateStep(step: number): boolean {
             'genre',
             'country_recording',
             'audio_style',
-            'writers',
             'explicit_content',
         ];
         for (const key of required) {
             if (String(release[key]).trim() === '') {
+                window.alert('Please complete all required fields.');
+                return false;
+            }
+        }
+        // Spec S3: every writer row needs a profile name and a role.
+        for (const row of writers.value) {
+            if (row.name.trim() === '' || row.role === '') {
                 window.alert('Please complete all required fields.');
                 return false;
             }
@@ -261,12 +334,29 @@ function validateStep(step: number): boolean {
             artist.photo,
             artist.bio,
             artist.status,
+            artist.publishing,
         ];
         for (const value of required) {
             if (String(value).trim() === '') {
                 window.alert('Please complete all required fields.');
                 return false;
             }
+        }
+        // Spec S6: the custom company name is required when OTHER.
+        if (artist.publishing === 'OTHER' && artist.publishingCustom.trim() === '') {
+            window.alert('Please complete all required fields.');
+            return false;
+        }
+        // Spec S4: bio is capped at 500 characters.
+        if (artist.bio.length > 500) {
+            window.alert('Artist Bio must be 500 characters or fewer.');
+            return false;
+        }
+        // Spec S2: the artist role is a 3-value select (legacy free text
+        // from an old profile is not a valid value).
+        if (!ROLE_OPTIONS.includes(artist.role as (typeof ROLE_OPTIONS)[number])) {
+            window.alert('Please complete all required fields.');
+            return false;
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(artist.email)) {
             window.alert('Please complete all required fields.');
@@ -326,7 +416,6 @@ async function submitForm() {
 
 function buildPayload() {
     return {
-        publishing: publishing.value,
         track_title: release.track_title,
         cover_artwork_creative_direction:
             release.cover_artwork_creative_direction,
@@ -334,7 +423,11 @@ function buildPayload() {
         genre: release.genre,
         country_recording: release.country_recording,
         audio_style: release.audio_style,
-        writers: release.writers,
+        // Spec S3: writers as [{name, role}] — no more free-text textarea.
+        writers: writers.value.map((w) => ({
+            name: w.name.trim(),
+            role: w.role,
+        })),
         explicit_content: release.explicit_content,
         is_cover: release.is_cover,
         original_song_link:
@@ -352,6 +445,11 @@ function buildPayload() {
             photo: a.photo,
             bio: a.bio,
             status: a.status,
+            // Spec S5: publishing per artist (was a global radio).
+            publishing: a.publishing,
+            publishing_custom:
+                a.publishing === 'OTHER' ? a.publishingCustom.trim() : '',
+            ipi_number: a.ipiNumber.trim(),
             links: Object.fromEntries(
                 LINK_FIELDS.map((f) => [f.key, a.links[f.key] || '']).filter(
                     ([, v]) => String(v).trim() !== '',
@@ -364,7 +462,6 @@ function buildPayload() {
 /* ---------- Edit mode: prefill from the stored payload (spec S11) ---------- */
 
 function prefillFromPayload(payload: Record<string, any>): void {
-    publishing.value = payload.publishing === 'none' ? 'none' : 'afrodise';
     release.track_title = String(payload.track_title ?? '');
     release.cover_artwork_creative_direction = String(
         payload.cover_artwork_creative_direction ?? '',
@@ -373,7 +470,6 @@ function prefillFromPayload(payload: Record<string, any>): void {
     release.genre = String(payload.genre ?? '');
     release.country_recording = String(payload.country_recording ?? '');
     release.audio_style = (payload.audio_style as 'Vocal' | 'Instrumental') || '';
-    release.writers = String(payload.writers ?? '');
     release.explicit_content =
         (payload.explicit_content as 'Yes' | 'No') || '';
     release.is_cover = (payload.is_cover as 'Yes' | 'No') || '';
@@ -381,6 +477,31 @@ function prefillFromPayload(payload: Record<string, any>): void {
     release.original_track_credits = String(
         payload.original_track_credits ?? '',
     );
+
+    // Spec S3: writers come as [{name, role}]; a legacy free-text string
+    // becomes one row per line so old submits stay editable.
+    if (Array.isArray(payload.writers)) {
+        writers.value = payload.writers.map((w: Record<string, any>) => ({
+            name: String(w?.name ?? ''),
+            role: ROLE_OPTIONS.includes(w?.role)
+                ? w.role
+                : '',
+        }));
+    } else {
+        const legacy = String(payload.writers ?? '')
+            .split('\n')
+            .map((line: string) => line.trim())
+            .filter(Boolean);
+        writers.value = legacy.length
+            ? legacy.map((name: string) => ({ name, role: '' as const }))
+            : [{ name: '', role: '' as const }];
+    }
+
+    // Spec S5: legacy payloads had a global publishing radio — seed every
+    // artist from it (afrodise → AFRODISE, none → empty) so the per-artist
+    // select starts from something sensible; the rest prefills per artist.
+    const legacyPublishing =
+        payload.publishing === 'afrodise' ? 'AFRODISE' : '';
 
     const list = Array.isArray(payload.artists) ? payload.artists : [];
     artistCount.value = list.length > 0 ? String(list.length) : '';
@@ -390,7 +511,10 @@ function prefillFromPayload(payload: Record<string, any>): void {
         block.name = String(raw.name ?? '');
         block.realName = String(raw.real_name ?? '');
         block.email = String(raw.email ?? '');
-        block.role = String(raw.role ?? '');
+        // Spec S2: legacy roles outside the select start empty.
+        block.role = ROLE_OPTIONS.includes(raw.role)
+            ? raw.role
+            : '';
         block.country = String(raw.country ?? '');
         block.city = String(raw.city ?? '');
         block.estate = String(raw.estate ?? '');
@@ -400,6 +524,13 @@ function prefillFromPayload(payload: Record<string, any>): void {
             raw.status === 'New Artist' || raw.status === 'Existing Artist'
                 ? raw.status
                 : '';
+        block.publishing = PUBLISHING_OPTIONS.some(
+            (o) => o.value === raw.publishing,
+        )
+            ? raw.publishing
+            : (legacyPublishing as ArtistBlock['publishing']);
+        block.publishingCustom = String(raw.publishing_custom ?? '');
+        block.ipiNumber = String(raw.ipi_number ?? '');
         if (raw.links && typeof raw.links === 'object') {
             for (const field of LINK_FIELDS) {
                 block.links[field.key] = String(raw.links[field.key] ?? '');
@@ -412,6 +543,10 @@ function prefillFromPayload(payload: Record<string, any>): void {
 /* ---------- Disclaimer (same content as the original form) ---------- */
 
 onMounted(() => {
+    // Spec S3: the writers select needs every profile's real name
+    // (both for a new form and when editing an old submit).
+    void loadProfileOptions();
+
     if (props.editSubmission) {
         prefillFromPayload(props.editSubmission.payload);
         return;
@@ -592,9 +727,77 @@ onMounted(() => {
                         </div>
                     </div>
 
+                    <!-- Spec S3 (profile-writers-publishing): dynamic list
+                         of n writers — profile real name + writer role. -->
                     <div class="group">
                         <label>Writers *</label>
-                        <textarea v-model="release.writers" required />
+                        <div class="space-y-3">
+                            <div
+                                v-for="(row, index) in writers"
+                                :key="index"
+                                class="flex flex-wrap items-end gap-3 rounded-lg border border-white/10 bg-white/5 p-3"
+                            >
+                                <div class="min-w-[220px] flex-1">
+                                    <label
+                                        class="mb-1 block text-xs opacity-70"
+                                        :for="`writer_name_${index}`"
+                                        >Writer *</label
+                                    >
+                                    <select
+                                        :id="`writer_name_${index}`"
+                                        v-model="row.name"
+                                        required
+                                    >
+                                        <option value="">
+                                            Select a writer
+                                        </option>
+                                        <option
+                                            v-for="profile in profileOptions"
+                                            :key="profile.id"
+                                            :value="profile.real_name"
+                                        >
+                                            {{ profile.real_name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="min-w-[180px] flex-1">
+                                    <label
+                                        class="mb-1 block text-xs opacity-70"
+                                        :for="`writer_role_${index}`"
+                                        >Rol del escritor *</label
+                                    >
+                                    <select
+                                        :id="`writer_role_${index}`"
+                                        v-model="row.role"
+                                        required
+                                    >
+                                        <option value="">Select</option>
+                                        <option
+                                            v-for="option in ROLE_OPTIONS"
+                                            :key="option"
+                                            :value="option"
+                                        >
+                                            {{ option }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <button
+                                    v-if="writers.length > 1"
+                                    type="button"
+                                    class="rounded-md border border-white/20 px-3 py-2 text-sm opacity-80 hover:opacity-100"
+                                    @click="removeWriter(index)"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90"
+                                @click="addWriter"
+                            >
+                                + Add writer
+                            </button>
+                        </div>
                     </div>
 
                     <div class="group">
@@ -677,30 +880,8 @@ onMounted(() => {
                 <div v-show="currentStep === 2" :class="['step', { active: currentStep === 2 }]">
                     <h3>Artists</h3>
 
-                    <!-- Spec S3: Publishing — before the artist count. -->
-                    <div class="group">
-                        <label>Publishing *</label>
-                        <div class="radio-group">
-                            <label class="radio-card">
-                                <input
-                                    v-model="publishing"
-                                    type="radio"
-                                    value="afrodise"
-                                    required
-                                />
-                                <span>Afrodise</span>
-                            </label>
-                            <label class="radio-card">
-                                <input
-                                    v-model="publishing"
-                                    type="radio"
-                                    value="none"
-                                    required
-                                />
-                                <span>I don't have this</span>
-                            </label>
-                        </div>
-                    </div>
+                    <!-- Spec S5: publishing moved INTO each artist block
+                         (was a global radio before the artist count). -->
 
                     <div class="group">
                         <label>Number Of Artists *</label>
@@ -789,7 +970,7 @@ onMounted(() => {
                                 />
                             </div>
                             <div class="group">
-                                <label>Real Name *</label>
+                                <label>First name and last name *</label>
                                 <input
                                     v-model="artist.realName"
                                     type="text"
@@ -805,12 +986,17 @@ onMounted(() => {
                                 />
                             </div>
                             <div class="group">
-                                <label>Role *</label>
-                                <input
-                                    v-model="artist.role"
-                                    type="text"
-                                    required
-                                />
+                                <label>Rol *</label>
+                                <select v-model="artist.role" required>
+                                    <option value="">Select</option>
+                                    <option
+                                        v-for="option in ROLE_OPTIONS"
+                                        :key="option"
+                                        :value="option"
+                                    >
+                                        {{ option }}
+                                    </option>
+                                </select>
                             </div>
                             <div class="group">
                                 <label>Artist Country *</label>
@@ -851,7 +1037,55 @@ onMounted(() => {
 
                         <div class="group">
                             <label>Artist Bio *</label>
-                            <textarea v-model="artist.bio" required />
+                            <textarea
+                                v-model="artist.bio"
+                                maxlength="500"
+                                required
+                            />
+                        </div>
+
+                        <!-- Spec S5: publishing per artist + IPI, autofilled
+                             from the profile and editable here. -->
+                        <div class="grid">
+                            <div class="group">
+                                <label>Publishing *</label>
+                                <select
+                                    v-model="artist.publishing"
+                                    required
+                                >
+                                    <option value="">Select</option>
+                                    <option
+                                        v-for="option in PUBLISHING_OPTIONS"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="group">
+                                <label>IPI Number</label>
+                                <input
+                                    v-model="artist.ipiNumber"
+                                    type="text"
+                                    placeholder="Enter IPI Number (if available)"
+                                />
+                            </div>
+                            <div
+                                v-if="artist.publishing === 'OTHER'"
+                                class="group"
+                                style="grid-column: 1 / -1"
+                            >
+                                <label
+                                    >Write the publishing company name *</label
+                                >
+                                <input
+                                    v-model="artist.publishingCustom"
+                                    type="text"
+                                    placeholder="Write the publishing company name"
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <!-- ARTIST PROFILE STATUS -->

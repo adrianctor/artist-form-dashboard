@@ -8,13 +8,10 @@ use App\Models\SongSubmission;
 use App\Services\SongSubmissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class SongController extends Controller
 {
-    public function __construct(private SongSubmissionService $submissions)
-    {
-    }
+    public function __construct(private SongSubmissionService $submissions) {}
 
     /**
      * Persist a form submission.
@@ -33,7 +30,13 @@ class SongController extends Controller
             'genre' => ['nullable', 'string', 'max:255'],
             'country_recording' => ['nullable', 'string', 'max:255'],
             'audio_style' => ['nullable', 'string', 'max:50'],
-            'writers' => ['nullable', 'string'],
+            // Spec S3 (profile-writers-publishing): the in-app form sends
+            // rows; legacy consumers still send a string — accept both.
+            'writers' => ['nullable', function ($attribute, $value, $fail) {
+                if (! is_string($value) && ! is_array($value)) {
+                    $fail('The writers field must be a string or an array.');
+                }
+            }],
             'explicit_content' => ['nullable', 'string', 'max:10'],
             'publishing' => ['nullable', 'string', 'in:afrodise,none'],
             'is_cover' => ['nullable', 'string', 'max:10'],
@@ -49,8 +52,12 @@ class SongController extends Controller
             'artists.*.city' => ['nullable', 'string', 'max:255'],
             'artists.*.estate' => ['nullable', 'string', 'max:255'],
             'artists.*.photo' => ['nullable', 'string', 'max:2000'],
-            'artists.*.bio' => ['nullable', 'string'],
+            'artists.*.bio' => ['nullable', 'string', 'max:500'],
             'artists.*.status' => ['nullable', 'string', 'max:50'],
+            // Spec S5: per-artist publishing rides the same payload.
+            'artists.*.publishing' => ['nullable', 'string', 'in:AFRODISE,COPYRIGHT CONTROL,OTHER'],
+            'artists.*.publishing_custom' => ['nullable', 'string', 'max:255'],
+            'artists.*.ipi_number' => ['nullable', 'string', 'max:50'],
             'artists.*.links' => ['nullable', 'array'],
         ]);
 

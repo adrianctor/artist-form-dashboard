@@ -57,6 +57,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     /**
      * Artist profile (spec S5) — mandatory before entering the dashboard.
      */
+    /**
+     * @return HasOne<ArtistProfile, $this>
+     */
     public function artistProfile(): HasOne
     {
         return $this->hasOne(ArtistProfile::class);

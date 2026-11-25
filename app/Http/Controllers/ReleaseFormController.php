@@ -8,9 +8,10 @@ use App\Models\SongSubmission;
 use App\Services\SongSubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,9 +22,7 @@ use Inertia\Response;
  */
 class ReleaseFormController extends Controller
 {
-    public function __construct(private SongSubmissionService $submissions)
-    {
-    }
+    public function __construct(private SongSubmissionService $submissions) {}
 
     public function show(Request $request): Response
     {
@@ -161,19 +160,22 @@ class ReleaseFormController extends Controller
     }
 
     /**
-     * Release payload validation shared by store and update (spec S1/S11).
+     * Release payload validation shared by store and update (spec S1/S11
+     * + specs S2-S6 of profile-writers-publishing).
      */
     private function validatedRelease(Request $request): array
     {
         $validated = $request->validate([
-            'publishing' => ['required', Rule::in(['afrodise', 'none'])],
             'track_title' => ['required', 'string', 'max:500'],
             'cover_artwork_creative_direction' => ['required', 'string'],
             'audio_link' => ['required', 'string', 'max:2000'],
             'genre' => ['required', 'string', 'max:255'],
             'country_recording' => ['required', 'string', 'max:255'],
             'audio_style' => ['required', Rule::in(['Vocal', 'Instrumental'])],
-            'writers' => ['required', 'string'],
+            // Spec S3: writers are rows of {name, role}, not free text.
+            'writers' => ['required', 'array', 'min:1'],
+            'writers.*.name' => ['required', 'string', 'max:255'],
+            'writers.*.role' => ['required', Rule::in(['Primary', 'Featuring', 'Remix'])],
             'explicit_content' => ['required', Rule::in(['Yes', 'No'])],
             'is_cover' => ['required', Rule::in(['Yes', 'No'])],
             'original_song_link' => ['nullable', 'string', 'max:2000'],
@@ -182,19 +184,40 @@ class ReleaseFormController extends Controller
             'artists.*.name' => ['required', 'string', 'max:255'],
             'artists.*.real_name' => ['required', 'string', 'max:255'],
             'artists.*.email' => ['required', 'email', 'max:255'],
-            'artists.*.role' => ['required', 'string', 'max:255'],
+            'artists.*.role' => ['required', Rule::in(['Primary', 'Featuring', 'Remix'])],
             'artists.*.country' => ['required', 'string', 'max:255'],
             'artists.*.city' => ['required', 'string', 'max:255'],
             'artists.*.estate' => ['required', 'string', 'max:255'],
             'artists.*.photo' => ['required', 'string', 'max:2000'],
-            'artists.*.bio' => ['required', 'string'],
+            'artists.*.bio' => ['required', 'string', 'max:500'],
             'artists.*.status' => ['required', Rule::in(['New Artist', 'Existing Artist'])],
+            // Spec S5: publishing lives per artist now.
+            'artists.*.publishing' => ['required', Rule::in(['AFRODISE', 'COPYRIGHT CONTROL', 'OTHER'])],
+            'artists.*.publishing_custom' => ['nullable', 'string', 'max:255'],
+            'artists.*.ipi_number' => ['nullable', 'string', 'max:50'],
             'artists.*.links' => ['array'],
         ]);
 
-        // Conditional rule (mirrors the client + ArtistProfile::isComplete):
-        // Existing Artist must provide at least one platform link.
+        // Conditional rules (mirrors the client + ArtistProfile::isComplete).
+        // NOTE: validatedRelease() returns array — a `return back()` here
+        // would TypeError after flashing. ValidationException is converted
+        // by the handler into a redirect with errors + input.
         foreach ($validated['artists'] ?? [] as $index => $artist) {
+            // Spec S6: OTHER requires the custom company name.
+            if ($artist['publishing'] === 'OTHER') {
+                if (trim((string) ($artist['publishing_custom'] ?? '')) === '') {
+                    throw ValidationException::withMessages([
+                        "artists.{$index}.publishing_custom" => 'The publishing company name is required when publishing is OTHER.',
+                    ]);
+                }
+                $validated['artists'][$index]['publishing_custom'] = trim($artist['publishing_custom']);
+            } else {
+                $validated['artists'][$index]['publishing_custom'] = '';
+            }
+            $validated['artists'][$index]['ipi_number'] = trim((string) ($artist['ipi_number'] ?? ''));
+
+            // Spec S2 (profile-writers-publishing): Existing Artist must
+            // provide at least one platform link.
             if ($artist['status'] !== 'Existing Artist') {
                 continue;
             }
@@ -203,10 +226,9 @@ class ReleaseFormController extends Controller
                 fn ($v) => trim((string) $v) !== '',
             );
             if ($links === []) {
-                return back()->withErrors([
-                    "artists.{$index}.links" =>
-                        'At least one platform link is required for an existing artist.',
-                ])->withInput();
+                throw ValidationException::withMessages([
+                    "artists.{$index}.links" => 'At least one platform link is required for an existing artist.',
+                ]);
             }
             $validated['artists'][$index]['links'] = $links;
         }

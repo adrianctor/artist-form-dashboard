@@ -72,6 +72,11 @@ class ArtistSearchController extends Controller
             'bio' => $profile->bio,
             'status' => $profile->status,
             'links' => $profile->links ?? [],
+            // Spec S5 (profile-writers-publishing): publishing rides along
+            // the autofill and stays editable in the form.
+            'publishing' => $profile->publishing,
+            'publishing_custom' => $profile->publishing_custom,
+            'ipi_number' => $profile->ipi_number,
         ];
     }
 }
