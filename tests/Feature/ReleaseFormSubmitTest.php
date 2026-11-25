@@ -176,6 +176,44 @@ class ReleaseFormSubmitTest extends TestCase
             ->assertSessionHasErrors('artists.0.role');
     }
 
+    /* ---- Regression probes from the independent verifier (S5/S3) ---- */
+
+    public function test_legacy_top_level_publishing_key_is_ignored_and_not_stored(): void
+    {
+        // Spec S5: the global publishing radio is gone; the legacy key must
+        // neither fail validation nor ride into the stored payload.
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['publishing'] = 'afrodise';
+
+        $this->actingAs($user)->post('/release-form', $payload)
+            ->assertRedirect(route('calendar'));
+
+        $stored = Song::first()->submissions()->first()->payload;
+        $this->assertArrayNotHasKey('publishing', $stored);
+        $this->assertSame('AFRODISE', $stored['artists'][0]['publishing']);
+    }
+
+    public function test_missing_artist_publishing_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->validPayload();
+        $payload['artists'][0]['publishing'] = null;
+
+        $this->actingAs($user)->from(route('release-form'))
+            ->post('/release-form', $payload)
+            ->assertSessionHasErrors('artists.0.publishing');
+        $this->assertSame(0, Song::count()); // rejected request stores nothing
+    }
+
+    public function test_legacy_free_text_writers_string_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->from(route('release-form'))
+            ->post('/release-form', $this->validPayload(['writers' => 'Free Text Writer']))
+            ->assertSessionHasErrors('writers');
+    }
+
     public function test_bio_over_500_characters_is_rejected(): void
     {
         $user = User::factory()->create();

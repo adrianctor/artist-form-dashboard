@@ -165,4 +165,14 @@ class ArtistProfileTest extends TestCase
 
         $this->assertTrue($user->fresh()->hasCompleteArtistProfile());
     }
+
+    public function test_profile_with_legacy_role_value_still_passes_the_gate(): void
+    {
+        // Spec S2: a profile saved before the 3-value select stays gate-valid;
+        // only editing forces Primary/Featuring/Remix.
+        $user = $this->userWithoutProfile();
+        ArtistProfile::create(array_merge(['user_id' => $user->id], $this->validAttrs($user, ['role' => 'Producer'])));
+
+        $this->assertTrue($user->fresh()->hasCompleteArtistProfile());
+    }
 }
