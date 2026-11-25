@@ -68,6 +68,27 @@ class MyProfileTest extends TestCase
                 ->where('user.email', $user->email));
     }
 
+    public function test_my_profile_page_delivers_publishing_and_ipi_props(): void
+    {
+        // Spec S6 (profile-writers-publishing): the page needs the saved
+        // publishing/IPI values to prefill the selects.
+        $user = User::factory()->create();
+        $user->artistProfile->update([
+            'publishing' => 'OTHER',
+            'publishing_custom' => 'Sunset Publishing LLC',
+            'ipi_number' => '00123456789',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('my-profile'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('MyProfile')
+                ->where('profile.publishing', 'OTHER')
+                ->where('profile.publishing_custom', 'Sunset Publishing LLC')
+                ->where('profile.ipi_number', '00123456789'));
+    }
+
     public function test_saving_a_complete_profile_unlocks_the_dashboard(): void
     {
         $user = $this->userWithoutProfile();
