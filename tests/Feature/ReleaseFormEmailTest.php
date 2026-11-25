@@ -232,6 +232,34 @@ class ReleaseFormEmailTest extends TestCase
         });
     }
 
+    public function test_email_renders_legacy_payloads_backwards_compatible(): void
+    {
+        // Spec S7: submissions stored before profile-writers-publishing
+        // (top-level publishing radio + free-text writers) still render —
+        // the mailable is built directly with a legacy-shaped payload.
+        $legacy = new ReleaseFormSubmitted([
+            'track_title' => 'Legacy Song',
+            'publishing' => 'afrodise',
+            'writers' => 'Free Text Writer',
+            'genre' => 'House',
+            'artists' => [[
+                'name' => 'Legacy Artist',
+                'real_name' => 'Legacy Artist Real',
+                'email' => 'legacy.artist@example.com',
+                'bio' => 'Legacy bio.',
+                'status' => 'New Artist',
+                'links' => [],
+            ]],
+        ]);
+
+        $rendered = $legacy->render();
+
+        $this->assertStringContainsString('Legacy Artist', $rendered);
+        $this->assertStringContainsString('Afrodise', $rendered);
+        $this->assertStringContainsString('Free Text Writer', $rendered);
+        $this->assertStringContainsString('First name and last name', $rendered);
+    }
+
     public function test_no_email_is_sent_when_validation_fails(): void
     {
         Mail::fake();
