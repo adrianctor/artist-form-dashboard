@@ -73,7 +73,7 @@ class SongPageController extends Controller
         ]);
     }
 
-    public function show(\Illuminate\Http\Request $request, string $songCode): Response
+    public function show(Request $request, string $songCode): Response
     {
         // Visibility via the same scope as the index (spec S6): owner,
         // creator of any submit, or any artist email — admins see all.
@@ -162,7 +162,7 @@ class SongPageController extends Controller
                 }
 
                 $fields[] = [
-                    'label' => ucwords(str_replace('_', ' ', (string) $key)),
+                    'label' => $this->labelFor((string) $key),
                     'value' => is_scalar($value) ? (string) $value : json_encode($value),
                 ];
             }
@@ -175,5 +175,20 @@ class SongPageController extends Controller
         }
 
         return $display;
+    }
+
+    /**
+     * Spec S7 (profile-writers-publishing): display labels follow the
+     * form/profile UI instead of the raw key.
+     */
+    private function labelFor(string $key): string
+    {
+        $overrides = [
+            'real_name' => 'First name and last name',
+            'ipi_number' => 'IPI Number',
+            'publishing_custom' => 'Publishing company',
+        ];
+
+        return $overrides[$key] ?? ucwords(str_replace('_', ' ', $key));
     }
 }

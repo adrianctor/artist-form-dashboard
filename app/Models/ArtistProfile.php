@@ -20,10 +20,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $estate
  * @property string $photo
  * @property string $bio
- * @property string $status  'New Artist' | 'Existing Artist'
+ * @property string $status 'New Artist' | 'Existing Artist'
  * @property array|null $links
- * @property string|null $publishing  'AFRODISE' | 'COPYRIGHT CONTROL' | 'OTHER'
- * @property string|null $publishing_custom  required when publishing = OTHER
+ * @property string|null $publishing 'AFRODISE' | 'COPYRIGHT CONTROL' | 'OTHER'
+ * @property string|null $publishing_custom required when publishing = OTHER
  * @property string|null $ipi_number
  */
 #[Fillable([

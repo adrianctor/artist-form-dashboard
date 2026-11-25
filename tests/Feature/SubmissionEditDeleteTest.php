@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Song;
 use App\Models\SongSubmission;
 use App\Models\User;
+use Database\Seeders\RolesAndUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -23,8 +25,8 @@ class SubmissionEditDeleteTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RolesAndUsersSeeder::class);
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->seed(RolesAndUsersSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     private function makeUser(string $email): User
@@ -60,14 +62,16 @@ class SubmissionEditDeleteTest extends TestCase
     private function validPayload(array $override = []): array
     {
         return array_merge([
-            'publishing' => 'afrodise',
             'track_title' => 'Editable Song',
             'cover_artwork_creative_direction' => 'Dark cover',
             'audio_link' => 'https://drive.google.com/file/x.wav',
             'genre' => 'House',
             'country_recording' => 'Argentina',
             'audio_style' => 'Vocal',
-            'writers' => 'Some Writer',
+            // Spec S3 (profile-writers-publishing): writers are rows.
+            'writers' => [
+                ['name' => 'Some Writer', 'role' => 'Primary'],
+            ],
             'explicit_content' => 'No',
             'is_cover' => 'No',
             'original_song_link' => '',
@@ -77,26 +81,33 @@ class SubmissionEditDeleteTest extends TestCase
                     'name' => 'Submit Creator',
                     'real_name' => 'Submit Creator',
                     'email' => 'submit.creator@example.com',
-                    'role' => 'DJ',
+                    'role' => 'Primary',
                     'country' => 'AR',
                     'city' => 'BA',
                     'estate' => 'CABA',
                     'photo' => 'https://x.com/p.jpg',
                     'bio' => 'Bio',
                     'status' => 'New Artist',
+                    // Spec S5: publishing per artist.
+                    'publishing' => 'AFRODISE',
+                    'publishing_custom' => '',
+                    'ipi_number' => '',
                     'links' => [],
                 ],
                 [
                     'name' => 'Featured Artist',
                     'real_name' => 'Featured Artist',
                     'email' => 'featured.artist@example.com',
-                    'role' => 'Vocalist',
+                    'role' => 'Featuring',
                     'country' => 'AR',
                     'city' => 'Cordoba',
                     'estate' => 'Cordoba',
                     'photo' => 'https://x.com/p2.jpg',
                     'bio' => 'Bio 2',
                     'status' => 'New Artist',
+                    'publishing' => 'COPYRIGHT CONTROL',
+                    'publishing_custom' => '',
+                    'ipi_number' => '',
                     'links' => [],
                 ],
             ],

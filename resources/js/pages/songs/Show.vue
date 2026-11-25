@@ -47,7 +47,23 @@ function isUrl(value: string): boolean {
     }
 }
 
-function stringify(value: unknown): string {
+function stringify(key: string, value: unknown): string {
+    // Spec S3 (profile-writers-publishing): writer rows render as
+    // "name — role" lines, never as JSON.
+    if (key === 'writers' && Array.isArray(value)) {
+        return value
+            .map((row) => {
+                if (row && typeof row === 'object') {
+                    const r = row as Record<string, unknown>;
+                    const name = String(r.name ?? '').trim();
+                    const role = String(r.role ?? '').trim();
+                    return role ? `${name} — ${role}` : name;
+                }
+                return String(row);
+            })
+            .filter(Boolean)
+            .join('\n');
+    }
     if (typeof value === 'string') return value;
     if (value === null || value === undefined) return '—';
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
@@ -60,6 +76,14 @@ function stringify(value: unknown): string {
 }
 
 function labelFor(key: string): string {
+    // Spec S7: labels follow the form/profile UI.
+    const overrides: Record<string, string> = {
+        real_name: 'First name and last name',
+        ipi_number: 'IPI Number',
+        publishing_custom: 'Publishing company',
+    };
+    if (overrides[key]) return overrides[key];
+
     return key
         .replaceAll('_', ' ')
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -178,7 +202,7 @@ defineOptions({
                                     <dd v-if="typeof value === 'string' && isUrl(value)" class="break-all text-sm">
                                         <a :href="value" target="_blank" rel="noopener noreferrer" class="text-primary underline underline-offset-4">{{ value }}</a>
                                     </dd>
-                                    <dd v-else class="whitespace-pre-wrap break-words text-sm text-muted-foreground">{{ stringify(value) }}</dd>
+                                    <dd v-else class="whitespace-pre-wrap break-words text-sm text-muted-foreground">{{ stringify(key, value) }}</dd>
                                 </div>
                             </dl>
 

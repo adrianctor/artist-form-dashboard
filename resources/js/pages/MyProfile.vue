@@ -224,7 +224,7 @@ const platforms = [
                     <Input
                         id="ipi_number"
                         name="ipi_number"
-                        :default-value="profile?.ipi_number"
+                        :default-value="profile?.ipi_number ?? ''"
                         placeholder="Enter IPI Number (if available)"
                     />
                     <InputError class="mt-2" :message="errors.ipi_number" />

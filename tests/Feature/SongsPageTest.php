@@ -146,6 +146,7 @@ class SongsPageTest extends TestCase
                 'publishing' => 'afrodise',
                 'track_title' => 'Full Payload Song',
                 'genre' => 'Deep House',
+                // Spec S7: legacy payloads keep their free-text writers.
                 'writers' => 'Some Writer',
                 'explicit_content' => 'No',
                 'is_cover' => 'No',
@@ -169,6 +170,62 @@ class SongsPageTest extends TestCase
                 ->where('submissions.0.payload.writers', 'Some Writer')
                 ->where('submissions.0.payload.artists.0.email', 'full.artist@example.com')
                 ->where('submissions.0.payload.artists.0.links.spotify', 'https://open.spotify.com/x')
+            );
+    }
+
+    public function test_show_renders_writer_rows_and_profile_labels(): void
+    {
+        // Spec S7 (profile-writers-publishing): writer rows and the new
+        // display labels (First name and last name / IPI Number).
+        $song = Song::create([
+            'song_code' => 'SONG-WRITERS1',
+            'track_title' => 'Writers Song',
+            'submission_count' => 1,
+            'artist_emails' => ',writers.artist@example.com,',
+        ]);
+        $song->submissions()->create([
+            'track_title' => 'Writers Song',
+            'payload' => [
+                'track_title' => 'Writers Song',
+                'genre' => 'Deep House',
+                'writers' => [
+                    ['name' => 'Austin Post', 'role' => 'Primary'],
+                    ['name' => 'Someone Else', 'role' => 'Remix'],
+                ],
+                'explicit_content' => 'No',
+                'is_cover' => 'No',
+                'artists' => [
+                    [
+                        'name' => 'Full Artist',
+                        'real_name' => 'Austin Post',
+                        'email' => 'writers.artist@example.com',
+                        'bio' => 'Full bio here',
+                        'status' => 'New Artist',
+                        'publishing' => 'OTHER',
+                        'publishing_custom' => 'Sunset Publishing LLC',
+                        'ipi_number' => '00123456789',
+                        'links' => [],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->actingAs(User::factory()->create(['email' => 'writers.artist@example.com']))
+            ->get('/songs/SONG-WRITERS1')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('submissions.0.payload.writers', [
+                    ['name' => 'Austin Post', 'role' => 'Primary'],
+                    ['name' => 'Someone Else', 'role' => 'Remix'],
+                ])
+                // Artist card labels follow the form UI.
+                ->where('submissions.0.artists.0.fields', function ($fields) {
+                    $labels = collect($fields)->pluck('label');
+
+                    return $labels->contains('First name and last name')
+                        && $labels->contains('IPI Number')
+                        && $labels->contains('Publishing company');
+                })
             );
     }
 

@@ -23,14 +23,16 @@ class ReleaseFormEmailTest extends TestCase
     private function submitForm(array $override = []): void
     {
         $payload = array_merge([
-            'publishing' => 'afrodise',
             'track_title' => 'Aaron Sevilla - Ya Zamani (Original Mix)',
             'cover_artwork_creative_direction' => 'Warm sunset colors.',
             'audio_link' => 'https://drive.google.com/file/master.wav',
             'genre' => 'Organic House',
             'country_recording' => 'Argentina',
             'audio_style' => 'Vocal',
-            'writers' => 'Aaron Sevilla',
+            // Spec S3 (profile-writers-publishing): writers are rows.
+            'writers' => [
+                ['name' => 'Aaron Sevilla', 'role' => 'Primary'],
+            ],
             'explicit_content' => 'No',
             'is_cover' => 'No',
             'original_song_link' => '',
@@ -40,26 +42,33 @@ class ReleaseFormEmailTest extends TestCase
                     'name' => 'Aaron Sevilla',
                     'real_name' => 'Aaron Sevilla Lopez',
                     'email' => 'first.artist@example.com',
-                    'role' => 'Producer',
+                    'role' => 'Primary',
                     'country' => 'Argentina',
                     'city' => 'Buenos Aires',
                     'estate' => 'CABA',
                     'photo' => 'https://drive.google.com/photo.jpg',
                     'bio' => 'DJ since 2015.',
                     'status' => 'New Artist',
+                    // Spec S5: publishing per artist (was a global radio).
+                    'publishing' => 'AFRODISE',
+                    'publishing_custom' => '',
+                    'ipi_number' => '',
                     'links' => [],
                 ],
                 [
                     'name' => 'Badrops',
                     'real_name' => 'Badrops Real',
                     'email' => 'second.artist@example.com',
-                    'role' => 'Vocalist',
+                    'role' => 'Featuring',
                     'country' => 'Argentina',
                     'city' => 'Cordoba',
                     'estate' => 'Cordoba',
                     'photo' => 'https://drive.google.com/photo2.jpg',
                     'bio' => 'Vocalist since 2018.',
                     'status' => 'New Artist',
+                    'publishing' => 'COPYRIGHT CONTROL',
+                    'publishing_custom' => '',
+                    'ipi_number' => '00123456789',
                     'links' => [],
                 ],
             ],
@@ -107,7 +116,9 @@ class ReleaseFormEmailTest extends TestCase
         Mail::fake();
 
         $this->submitForm([
-            'writers' => 'Writers PARITY Marker',
+            'writers' => [
+                ['name' => 'Writers PARITY Marker', 'role' => 'Remix'],
+            ],
             'country_recording' => 'Country PARITY Marker',
             'genre' => 'Genre PARITY Marker',
         ]);
@@ -118,6 +129,8 @@ class ReleaseFormEmailTest extends TestCase
             return str_contains($rendered, 'Writers PARITY Marker')
                 && str_contains($rendered, 'Country PARITY Marker')
                 && str_contains($rendered, 'Genre PARITY Marker')
+                // Spec S3: the writer role rides next to the name.
+                && str_contains($rendered, 'Writers PARITY Marker — Remix')
                 // The card heading is the artist's real name (parity with
                 // the history page), not a generic "Artist N".
                 && str_contains($rendered, 'Aaron Sevilla')
@@ -157,13 +170,16 @@ class ReleaseFormEmailTest extends TestCase
                 'name' => 'Link Artist',
                 'real_name' => 'Link Artist',
                 'email' => 'first.artist@example.com',
-                'role' => 'DJ',
+                'role' => 'Remix',
                 'country' => 'AR',
                 'city' => 'BA',
                 'estate' => 'CABA',
                 'photo' => 'https://x.com/p.jpg',
                 'bio' => 'DJ since 2015.',
                 'status' => 'New Artist',
+                'publishing' => 'OTHER',
+                'publishing_custom' => 'Sunset Publishing LLC',
+                'ipi_number' => '',
                 'links' => [
                     'spotify' => 'https://open.spotify.com/artist/xyz',
                     'apple_music' => '',

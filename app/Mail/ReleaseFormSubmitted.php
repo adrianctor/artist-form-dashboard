@@ -21,9 +21,7 @@ class ReleaseFormSubmitted extends Mailable
     use Queueable, SerializesModels;
 
     /** @param array<string, mixed> $payload */
-    public function __construct(public array $payload)
-    {
-    }
+    public function __construct(public array $payload) {}
 
     public function envelope(): Envelope
     {
@@ -204,13 +202,49 @@ class ReleaseFormSubmitted extends Mailable
 
     private function labelFor(string $key): string
     {
-        return ucwords(str_replace('_', ' ', $key));
+        // Spec S7 (profile-writers-publishing): labels follow the form UI.
+        $overrides = [
+            'real_name' => 'First name and last name',
+            'ipi_number' => 'IPI Number',
+            'publishing_custom' => 'Publishing company',
+        ];
+
+        return $overrides[$key] ?? ucwords(str_replace('_', ' ', $key));
     }
 
     private function formatValue(string $key, mixed $value): string
     {
         if ($key === 'publishing') {
-            return $value === 'afrodise' ? 'Afrodise' : "I don't have this";
+            // Spec S5: per-artist values + the legacy global radio.
+            return match ((string) $value) {
+                'afrodise', 'AFRODISE' => 'Afrodise',
+                'COPYRIGHT CONTROL' => 'Copyright Control',
+                'OTHER' => 'Other / Custom Publishing',
+                default => "I don't have this",
+            };
+        }
+        if ($key === 'writers') {
+            // Spec S3: rows of {name, role} render as "name — role" lines
+            // (a legacy free-text string stays as-is).
+            if (is_array($value)) {
+                $lines = [];
+                foreach ($value as $row) {
+                    if (is_array($row)) {
+                        $name = trim((string) ($row['name'] ?? ''));
+                        $role = trim((string) ($row['role'] ?? ''));
+                        if ($name === '') {
+                            continue;
+                        }
+                        $lines[] = $this->escape($name).($role !== '' ? ' — '.$this->escape($role) : '');
+                    } else {
+                        $lines[] = $this->escape((string) $row);
+                    }
+                }
+
+                return implode('<br />', $lines);
+            }
+
+            return nl2br($this->escape((string) $value));
         }
         if (is_bool($value)) {
             return $value ? 'Yes' : 'No';
