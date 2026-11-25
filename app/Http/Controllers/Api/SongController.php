@@ -52,7 +52,7 @@ class SongController extends Controller
             'artists.*.city' => ['nullable', 'string', 'max:255'],
             'artists.*.estate' => ['nullable', 'string', 'max:255'],
             'artists.*.photo' => ['nullable', 'string', 'max:2000'],
-            'artists.*.bio' => ['nullable', 'string', 'max:500'],
+            'artists.*.bio' => ['nullable', 'string'],
             'artists.*.status' => ['nullable', 'string', 'max:50'],
             // Spec S5: per-artist publishing rides the same payload.
             'artists.*.publishing' => ['nullable', 'string', 'in:AFRODISE,COPYRIGHT CONTROL,OTHER'],

@@ -66,11 +66,11 @@ Test runner: `php artisan test` (+ `npm run build` para type-check del front).
 
 ## Tasks
 
-- T1 — Migración + model + gate: columnas publishing/publishing_custom/ipi_number, `isComplete()`, factory/seeders con valores válidos (rol `Primary`, publishing `AFRODISE`). Ruta: inline. Commit: pendiente.
-- T2 — Profile UI + `ArtistProfileController`: labels S1, select Rol S2, bloque publishing S6, bio 500 S4 + tests (`MyProfileTest`, `ArtistProfileTest`). Ruta: inline. Commit: pendiente.
-- T3 — Form: endpoint de listado de profiles, lista de escritores S3, publishing por artista S5, select Rol en bloque de artista S2, bio 500 S4 + validación server + tests (`ReleaseFormSubmitTest`, `ReleaseFormPageTest`). Ruta: inline. Commit: pendiente.
-- T4 — Email + historial + prefill de edición S7 + tests (`ReleaseFormEmailTest`, `SongsPageTest`, `SubmissionEditDeleteTest`). Ruta: inline. Commit: pendiente.
-- T5 — Suite completa, `npm run build`, pint/phpstan. Ruta: inline. Commit: pendiente.
+- T1 — Migración + model + gate: columnas publishing/publishing_custom/ipi_number, `isComplete()`, factory/seeders con valores válidos (rol `Primary`, publishing `AFRODISE`). Ruta: inline. Commit: 04d83e1.
+- T2 — Profile UI + `ArtistProfileController`: labels S1, select Rol S2, bloque publishing S6, bio 500 S4 + tests (`MyProfileTest`, `ArtistProfileTest`). Ruta: inline. Commit: 04d83e1.
+- T3 — Form: endpoint de listado de profiles, lista de escritores S3, publishing por artista S5, select Rol en bloque de artista S2, bio 500 S4 + validación server + tests (`ReleaseFormSubmitTest`, `ReleaseFormPageTest`, `ArtistSearchTest`). Ruta: inline. Commit: 9d3a529.
+- T4 — Email + historial + prefill de edición S7 + tests (`ReleaseFormEmailTest`, `SongsPageTest`, `SubmissionEditDeleteTest`). Ruta: inline. Commit: 281f894.
+- T5 — Suite completa (187 passed), `npm run build`, `npm run types:check`, pint (archivos propios limpios), phpstan (61 errores, 0 nuevos vs baseline 73). Ruta: inline. Commit: incluido en 9d3a529/281f894 + correcciones.
 
 Rutas declaradas inline (no writer trigger): las unidades son dependientes entre sí (comparten la forma del payload `writers`/`publishing`, la factory y los fixtures de tests) — no son independientes para correr en paralelo.
 
@@ -95,3 +95,9 @@ Todo debes entregarlo testeado modificando tambien el correo y los campos para v
 L2 (user, decisiones): IPI "en el perfil se llena esa info, y en el form se carga automaticamente al seleccionar el artista, igualmente se puede permitir editar así como cualquier otro campo"; Rol del escritor = "Select: Primary, Featuring, Remix"; gate = "Obligatorio y cuenta para el gate"; toggle ¿IA? = "No incluirlo"; "no, rol del artista es diferente al rol de los escritores, el de los escritores tiene solo 3 posibles valores, el de los artistas en el profile son diferentes valores" → aclarado luego: "Select de 3 en ambos" para el rol del artista.
 
 L3 (evidencia): `resources/js/pages/MyProfile.vue:84-104` (labels Real Name/Role), `ReleaseForm.vue:595-598` (textarea writers), `ReleaseForm.vue:680-703` (radio publishing global), `ReleaseFormController.php:165-197` (validación), `ArtistProfileController.php:38-61` (validación profile, bio max:5000), `ArtistProfile.php:64-90` (isComplete), `ReleaseFormSubmitted.php` (email), `SongPageController.php:115-175` (display historial).
+
+L4 (2026-11-25, bug preexistente destapado): `ReleaseFormController::validatedRelease(): array` usaba `return back()->withErrors(...)` en las reglas condicionales — PHP lanza TypeError tras flashear los errores. Los tests viejos solo asserteaban `session errors` (no el status), por eso lo disimulaban (status 500 con errores en sesión = test en verde). Corregido a `ValidationException::withMessages` (el handler convierte a redirect + errores + input). Verificado: en develop el mismo path devuelve 500.
+
+L5 (verificación T5): `php artisan test` → 187 passed (962 assertions); `npm run build` OK; `npm run types:check` OK; pint limpio en archivos tocados (quedan 2 preexistentes: SetPasswordSetupLink.php, Song.php); phpstan 61 errores vs 73 baseline de develop → 0 errores nuevos (mejoré 12 con el genérico `HasOne<ArtistProfile, $this>` en User::artistProfile).
+
+L6 (siguiente paso): falta revisión/merge del usuario + considerar `migrate` en producción al hacer deploy (columnas nuevas nullable, gate de profile pasará a exigir publishing a los usuarios existentes).

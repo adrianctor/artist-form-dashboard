@@ -230,9 +230,10 @@ const platforms = [
                     <InputError class="mt-2" :message="errors.ipi_number" />
                 </div>
 
-                <!-- Spec S6: the custom company name activates on OTHER. -->
+                <!-- Spec S6: the custom company name activates on OTHER
+                     (reactive — follows the select, not the saved prop). -->
                 <div
-                    v-if="profile?.publishing === 'OTHER'"
+                    v-if="publishing === 'OTHER'"
                     class="grid gap-2 sm:col-span-2"
                 >
                     <Label for="publishing_custom"
