@@ -27,22 +27,27 @@ class ArtistProfileController extends Controller
     }
 
     /**
-     * Spec S5: every artist field is required; platform links are required
-     * only when status is "Existing Artist" (same conditional rule as the
-     * release form).
+     * Spec S5 (gate) + specs S1/S2/S4/S6 of profile-writers-publishing:
+     * every artist field is required; role is a 3-value select; bio is
+     * capped at 500; publishing is required (custom name only when OTHER);
+     * platform links are required only when status is "Existing Artist"
+     * (same conditional rule as the release form).
      */
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'artist_name' => ['required', 'string', 'max:255'],
             'real_name' => ['required', 'string', 'max:255'],
-            'role' => ['required', 'string', 'max:255'],
+            'role' => ['required', Rule::in(['Primary', 'Featuring', 'Remix'])],
             'country' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
             'estate' => ['required', 'string', 'max:255'],
             'photo' => ['required', 'string', 'max:2048'],
-            'bio' => ['required', 'string', 'max:5000'],
+            'bio' => ['required', 'string', 'max:500'],
             'status' => ['required', Rule::in(['New Artist', 'Existing Artist'])],
+            'publishing' => ['required', Rule::in(['AFRODISE', 'COPYRIGHT CONTROL', 'OTHER'])],
+            'publishing_custom' => ['nullable', 'string', 'max:255'],
+            'ipi_number' => ['nullable', 'string', 'max:50'],
             'links' => ['array'],
             'links.spotify' => ['nullable', 'string', 'max:2048'],
             'links.apple_music' => ['nullable', 'string', 'max:2048'],
@@ -71,6 +76,19 @@ class ArtistProfileController extends Controller
             // New Artist: links are optional — normalize to only non-empty.
             $data['links'] = array_filter($data['links'] ?? [], fn ($v) => trim((string) $v) !== '');
         }
+
+        // Spec S6: the custom company name is required only when the
+        // publishing select is OTHER; otherwise normalize empties out.
+        if ($data['publishing'] === 'OTHER') {
+            if (trim((string) ($data['publishing_custom'] ?? '')) === '') {
+                return back()->withErrors([
+                    'publishing_custom' => 'The publishing company name is required when publishing is OTHER.',
+                ])->withInput();
+            }
+        } else {
+            $data['publishing_custom'] = '';
+        }
+        $data['ipi_number'] = trim((string) ($data['ipi_number'] ?? ''));
 
         $request->user()->artistProfile()->updateOrCreate(
             ['user_id' => $request->user()->id],

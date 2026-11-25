@@ -22,6 +22,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $bio
  * @property string $status  'New Artist' | 'Existing Artist'
  * @property array|null $links
+ * @property string|null $publishing  'AFRODISE' | 'COPYRIGHT CONTROL' | 'OTHER'
+ * @property string|null $publishing_custom  required when publishing = OTHER
+ * @property string|null $ipi_number
  */
 #[Fillable([
     'user_id',
@@ -35,6 +38,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'bio',
     'status',
     'links',
+    'publishing',
+    'publishing_custom',
+    'ipi_number',
 ])]
 class ArtistProfile extends Model
 {
@@ -61,8 +67,10 @@ class ArtistProfile extends Model
     }
 
     /**
-     * Completeness rule (S5): every field non-empty; platform links are
-     * required only when the artist already has profiles (Existing Artist).
+     * Completeness rule (S5 + spec S6 of profile-writers-publishing): every
+     * field non-empty; platform links are required only when the artist
+     * already has profiles (Existing Artist); publishing is required (and
+     * the custom company name only when publishing = OTHER).
      */
     public function isComplete(): bool
     {
@@ -85,6 +93,15 @@ class ArtistProfile extends Model
         }
 
         if (! in_array($this->status, ['New Artist', 'Existing Artist'], true)) {
+            return false;
+        }
+
+        // Spec S6: publishing is part of the gate.
+        $publishing = trim((string) ($this->publishing ?? ''));
+        if ($publishing === '') {
+            return false;
+        }
+        if ($publishing === 'OTHER' && trim((string) ($this->publishing_custom ?? '')) === '') {
             return false;
         }
 

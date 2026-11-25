@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ArtistProfileController from '@/actions/App/Http/Controllers/ArtistProfileController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -20,6 +20,9 @@ type ArtistProfile = {
     bio: string;
     status: 'New Artist' | 'Existing Artist';
     links: Record<string, string> | null;
+    publishing: 'AFRODISE' | 'COPYRIGHT CONTROL' | 'OTHER' | null;
+    publishing_custom: string | null;
+    ipi_number: string | null;
 } | null;
 
 const props = defineProps<{
@@ -29,6 +32,20 @@ const props = defineProps<{
 
 const isNew = computed(() => props.profile === null);
 const isExisting = computed(() => props.profile?.status === 'Existing Artist');
+
+// Spec S2 (profile-writers-publishing): the artist role is a 3-value select.
+const roleOptions = ['Primary', 'Featuring', 'Remix'] as const;
+
+// Spec S6: publishing select + conditional custom company name.
+// Reactive so the custom field activates the moment OTHER is picked.
+const publishing = ref(props.profile?.publishing ?? '');
+const publishingCustom = ref(props.profile?.publishing_custom ?? '');
+
+const publishingOptions = [
+    { value: 'AFRODISE', label: 'AFRODISE' },
+    { value: 'COPYRIGHT CONTROL', label: 'COPYRIGHT CONTROL' },
+    { value: 'OTHER', label: 'OTHER / CUSTOM PUBLISHING' },
+] as const;
 
 const platforms = [
     { key: 'spotify', label: 'Spotify Artist Link' },
@@ -81,26 +98,35 @@ const platforms = [
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="real_name">Real Name *</Label>
+                    <Label for="real_name">First name and last name *</Label>
                     <Input
                         id="real_name"
                         name="real_name"
                         :default-value="profile?.real_name"
                         required
-                        placeholder="Real Name"
+                        placeholder="First and last name"
                     />
                     <InputError class="mt-2" :message="errors.real_name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="role">Role *</Label>
-                    <Input
+                    <Label for="role">Rol *</Label>
+                    <select
                         id="role"
                         name="role"
-                        :default-value="profile?.role"
+                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         required
-                        placeholder="Producer, DJ, Vocalist..."
-                    />
+                    >
+                        <option value="" disabled>Select</option>
+                        <option
+                            v-for="option in roleOptions"
+                            :key="option"
+                            :value="option"
+                            :selected="profile?.role === option"
+                        >
+                            {{ option }}
+                        </option>
+                    </select>
                     <InputError class="mt-2" :message="errors.role" />
                 </div>
 
@@ -163,10 +189,66 @@ const platforms = [
                     name="bio"
                     :default-value="profile?.bio"
                     required
-                    placeholder="Tell us about the artist"
+                    maxlength="500"
+                    placeholder="Tell us about the artist (500 characters max)"
                     class="min-h-[120px]"
                 />
                 <InputError class="mt-2" :message="errors.bio" />
+            </div>
+
+            <!-- Spec S6 (profile-writers-publishing): publishing + IPI. -->
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="publishing">Publishing *</Label>
+                    <select
+                        id="publishing"
+                        v-model="publishing"
+                        name="publishing"
+                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        required
+                    >
+                        <option value="" disabled>Select</option>
+                        <option
+                            v-for="option in publishingOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </option>
+                    </select>
+                    <InputError class="mt-2" :message="errors.publishing" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="ipi_number">IPI Number</Label>
+                    <Input
+                        id="ipi_number"
+                        name="ipi_number"
+                        :default-value="profile?.ipi_number"
+                        placeholder="Enter IPI Number (if available)"
+                    />
+                    <InputError class="mt-2" :message="errors.ipi_number" />
+                </div>
+
+                <!-- Spec S6: the custom company name activates on OTHER. -->
+                <div
+                    v-if="profile?.publishing === 'OTHER'"
+                    class="grid gap-2 sm:col-span-2"
+                >
+                    <Label for="publishing_custom"
+                        >Write the publishing company name *</Label
+                    >
+                    <Input
+                        id="publishing_custom"
+                        v-model="publishingCustom"
+                        name="publishing_custom"
+                        placeholder="Write the publishing company name"
+                    />
+                    <InputError
+                        class="mt-2"
+                        :message="errors.publishing_custom"
+                    />
+                </div>
             </div>
 
             <!-- ARTIST PROFILE STATUS (same cards as the release form) -->

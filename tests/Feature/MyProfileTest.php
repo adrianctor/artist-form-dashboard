@@ -39,7 +39,7 @@ class MyProfileTest extends TestCase
         return array_merge([
             'artist_name' => 'Aaron Sevilla',
             'real_name' => 'Aaron Sevilla Lopez',
-            'role' => 'Producer',
+            'role' => 'Primary',
             'country' => 'Argentina',
             'city' => 'Buenos Aires',
             'estate' => 'CABA',
@@ -47,6 +47,10 @@ class MyProfileTest extends TestCase
             'bio' => 'DJ and producer since 2015.',
             'status' => 'New Artist',
             'links' => [],
+            // Spec S6 (profile-writers-publishing): publishing gates the profile.
+            'publishing' => 'AFRODISE',
+            'publishing_custom' => '',
+            'ipi_number' => '',
         ], $override);
     }
 
@@ -142,5 +146,100 @@ class MyProfileTest extends TestCase
         $this->actingAs($user)
             ->patch(route('my-profile.update'), $this->validPayload(['status' => 'Something Else']))
             ->assertSessionHasErrors('status');
+    }
+
+    /* ---- Specs S2/S4/S6 (profile-writers-publishing) ---- */
+
+    public function test_role_must_be_one_of_the_three_select_values(): void
+    {
+        $user = $this->userWithoutProfile();
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload(['role' => 'Producer']))
+            ->assertSessionHasErrors('role');
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload(['role' => 'Remix']))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertSame('Remix', $user->fresh()->artistProfile->role);
+    }
+
+    public function test_bio_is_capped_at_500_characters(): void
+    {
+        $user = $this->userWithoutProfile();
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload(['bio' => str_repeat('a', 501)]))
+            ->assertSessionHasErrors('bio');
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload(['bio' => str_repeat('a', 500)]))
+            ->assertRedirect(route('dashboard'));
+    }
+
+    public function test_publishing_is_required_and_gates_the_profile(): void
+    {
+        $user = $this->userWithoutProfile();
+
+        // Spec S6: no publishing → validation error AND incomplete profile.
+        $this->actingAs($user)
+            ->from(route('my-profile'))
+            ->patch(route('my-profile.update'), $this->validPayload(['publishing' => '']))
+            ->assertRedirect(route('my-profile'))
+            ->assertSessionHasErrors('publishing');
+
+        $this->assertFalse($user->fresh()->hasCompleteArtistProfile());
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload())
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertTrue($user->fresh()->hasCompleteArtistProfile());
+    }
+
+    public function test_other_publishing_requires_the_custom_company_name(): void
+    {
+        $user = $this->userWithoutProfile();
+
+        $this->actingAs($user)
+            ->from(route('my-profile'))
+            ->patch(route('my-profile.update'), $this->validPayload([
+                'publishing' => 'OTHER',
+                'publishing_custom' => '',
+            ]))
+            ->assertRedirect(route('my-profile'))
+            ->assertSessionHasErrors('publishing_custom');
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload([
+                'publishing' => 'OTHER',
+                'publishing_custom' => 'Sunset Publishing LLC',
+            ]))
+            ->assertRedirect(route('dashboard'));
+
+        $profile = $user->fresh()->artistProfile;
+        $this->assertSame('OTHER', $profile->publishing);
+        $this->assertSame('Sunset Publishing LLC', $profile->publishing_custom);
+    }
+
+    public function test_invalid_publishing_value_is_rejected(): void
+    {
+        $user = $this->userWithoutProfile();
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload(['publishing' => 'Something Else']))
+            ->assertSessionHasErrors('publishing');
+    }
+
+    public function test_ipi_number_is_saved_when_provided(): void
+    {
+        $user = $this->userWithoutProfile();
+
+        $this->actingAs($user)
+            ->patch(route('my-profile.update'), $this->validPayload(['ipi_number' => '00123456789']))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertSame('00123456789', $user->fresh()->artistProfile->ipi_number);
     }
 }

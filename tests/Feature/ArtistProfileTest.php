@@ -34,7 +34,7 @@ class ArtistProfileTest extends TestCase
         return array_merge([
             'artist_name' => 'Aaron Sevilla',
             'real_name' => 'Aaron Sevilla Lopez',
-            'role' => 'Producer',
+            'role' => 'Primary',
             'country' => 'Argentina',
             'city' => 'Buenos Aires',
             'estate' => 'CABA',
@@ -42,6 +42,10 @@ class ArtistProfileTest extends TestCase
             'bio' => 'DJ and producer since 2015.',
             'status' => 'New Artist',
             'links' => [],
+            // Spec S6 (profile-writers-publishing): part of the gate.
+            'publishing' => 'AFRODISE',
+            'publishing_custom' => '',
+            'ipi_number' => '',
         ], $override);
     }
 
@@ -119,5 +123,46 @@ class ArtistProfileTest extends TestCase
         $profile = $user->fresh()->artistProfile;
         $this->assertSame('artist@example.com', $profile->email);
         $this->assertArrayNotHasKey('email', $profile->getAttributes());
+    }
+
+    /* ---- Spec S6 (profile-writers-publishing): publishing in the gate ---- */
+
+    public function test_profile_without_publishing_is_incomplete(): void
+    {
+        $user = $this->userWithoutProfile();
+        ArtistProfile::create(
+            array_merge(['user_id' => $user->id], $this->validAttrs($user, ['publishing' => null]))
+        );
+
+        $this->assertFalse($user->fresh()->hasCompleteArtistProfile());
+    }
+
+    public function test_other_publishing_without_custom_name_is_incomplete(): void
+    {
+        $user = $this->userWithoutProfile();
+        ArtistProfile::create(
+            array_merge(['user_id' => $user->id], $this->validAttrs($user, [
+                'publishing' => 'OTHER',
+                'publishing_custom' => '  ',
+            ]))
+        );
+
+        $this->assertFalse($user->fresh()->hasCompleteArtistProfile());
+
+        $user->fresh()->artistProfile->update(['publishing_custom' => 'Sunset Publishing LLC']);
+        $this->assertTrue($user->fresh()->hasCompleteArtistProfile());
+    }
+
+    public function test_other_publishing_with_custom_name_is_complete(): void
+    {
+        $user = $this->userWithoutProfile();
+        ArtistProfile::create(
+            array_merge(['user_id' => $user->id], $this->validAttrs($user, [
+                'publishing' => 'OTHER',
+                'publishing_custom' => 'Sunset Publishing LLC',
+            ]))
+        );
+
+        $this->assertTrue($user->fresh()->hasCompleteArtistProfile());
     }
 }

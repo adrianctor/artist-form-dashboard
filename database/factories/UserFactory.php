@@ -58,7 +58,8 @@ class UserFactory extends Factory
                 'user_id' => $user->id,
                 'artist_name' => $user->name,
                 'real_name' => $user->name,
-                'role' => 'Artist',
+                // Spec S2 (profile-writers-publishing): role is a 3-value select.
+                'role' => 'Primary',
                 'country' => 'Argentina',
                 'city' => 'Buenos Aires',
                 'estate' => 'CABA',
@@ -66,6 +67,8 @@ class UserFactory extends Factory
                 'bio' => 'Test artist bio.',
                 'status' => 'New Artist',
                 'links' => [],
+                // Spec S6: publishing is part of the completeness gate.
+                'publishing' => 'AFRODISE',
             ]);
         });
     }

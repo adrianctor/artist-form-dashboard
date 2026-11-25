@@ -63,7 +63,7 @@ class DemoDataSeeder extends Seeder
                             'name' => explode(' - ', $title)[0],
                             'real_name' => 'Demo Artist',
                             'email' => 'artist@example.com',
-                            'role' => 'Producer',
+                            'role' => 'Primary',
                             'country' => 'Argentina',
                             'city' => 'Buenos Aires',
                             'estate' => 'CABA',
