@@ -124,6 +124,19 @@ class ArtistSearchTest extends TestCase
         $this->getJson('/profiles')->assertUnauthorized();
     }
 
+    public function test_profiles_endpoint_redirects_incomplete_profiles_through_the_gate(): void
+    {
+        // Advisory from independent verification: GET /profiles sits in the
+        // profile.complete group, so an incomplete profile is redirected to
+        // My profile (same gate as the release form) instead of 401/403.
+        $incomplete = User::factory()->create(['name' => 'Incomplete Writer']);
+        $incomplete->artistProfile()->delete();
+
+        $this->actingAs($incomplete)
+            ->get('/profiles')
+            ->assertRedirect(route('my-profile'));
+    }
+
     public function test_result_shape_contains_profile_fields_for_autofill(): void
     {
         $this->makeCompleteArtist('Aaron Sevilla', 'aaron@example.com');
