@@ -6,6 +6,7 @@ use App\Models\Song;
 use App\Models\SongSubmission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -83,5 +84,84 @@ class DashboardTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('Dashboard'));
 
         $this->actingAs($user)->get(route('release-form'))->assertOk();
+    }
+
+    /* ---- Viewer-timezone bucketing (same bug as the calendar) ---- */
+
+    public function test_submissions_daily_buckets_use_the_viewer_timezone(): void
+    {
+        // Fixed clock: 2026-11-26 03:00 UTC = 2026-11-25 22:00 in UTC-5, so
+        // for a UTC-5 viewer the submit belongs to the 25th, not the 26th.
+        $user = User::factory()->create();
+        Carbon::setTestNow(Carbon::parse('2026-11-26 03:00:00'));
+
+        try {
+            $song = Song::create([
+                'song_code' => 'SONG-TZDASH1',
+                'user_id' => $user->id,
+                'track_title' => 'TZ Dashboard Track',
+                'submission_count' => 1,
+            ]);
+            SongSubmission::create([
+                'song_id' => $song->id,
+                'track_title' => 'TZ Dashboard Track',
+                'payload' => [],
+                'created_by' => $user->id,
+            ]);
+
+            // Without a cookie: UTC buckets keep the historical behavior.
+            $this->actingAs($user)
+                ->get(route('dashboard'))
+                ->assertInertia(fn ($page) => $page
+                    ->where('submissionsDaily.2026-11-26', 1)
+                );
+
+            $this->actingAs($user)
+                ->withUnencryptedCookie('tz_offset', '300')
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page
+                    ->where('submissionsDaily.2026-11-25', 1)
+                    ->missing('submissionsDaily.2026-11-26')
+                );
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_songs_this_month_uses_the_viewer_timezone(): void
+    {
+        // 2026-12-01 02:00 UTC is still November for a UTC-5 viewer: a song
+        // created 2026-11-30 20:00 UTC is in THEIR current month.
+        $user = User::factory()->create();
+        Carbon::setTestNow(Carbon::parse('2026-12-01 02:00:00'));
+
+        try {
+            Song::create([
+                'song_code' => 'SONG-TZMONTH',
+                'user_id' => $user->id,
+                'track_title' => 'TZ Month Track',
+                'submission_count' => 0,
+            ]);
+            // created_at is not mass-assignable — set it through the query
+            // builder (timestamps are excluded from Song's fillable).
+            Song::query()->where('song_code', 'SONG-TZMONTH')->update([
+                'created_at' => '2026-11-30 20:00:00',
+            ]);
+
+            // Without a cookie: the UTC month is December, so the song
+            // created on November 30 UTC does not count.
+            $this->actingAs($user)
+                ->get(route('dashboard'))
+                ->assertInertia(fn ($page) => $page->where('stats.songs_this_month', 0));
+
+            $this->actingAs($user)
+                ->withUnencryptedCookie('tz_offset', '300')
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page->where('stats.songs_this_month', 1));
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }

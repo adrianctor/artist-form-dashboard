@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Song;
 use App\Models\SongSubmission;
+use App\Support\ViewerTimezone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -11,7 +12,10 @@ use Inertia\Response;
 
 /**
  * Calendar (spec S2/S3/S4): every form submit grouped by the date it was
- * made. Accessible to all authenticated users (own songs; admins see all).
+ * made — in the VIEWER's timezone (bug fix: grouping used the UTC date, so
+ * a submit on the 19th at 20:22 local (UTC-5) landed on the 20th). The
+ * browser sends its UTC offset in the `tz_offset` cookie (see
+ * App\Support\ViewerTimezone); without it the historical UTC behavior holds.
  *
  * Scale: only the requested month is aggregated in SQL (day counts), and
  * the selected day's submissions are loaded on demand, paginated (50/page)
@@ -21,9 +25,16 @@ class CalendarController extends Controller
 {
     public function index(Request $request): Response
     {
-        $month = $this->parseMonth($request->query('month'));
-        $start = $month->copy()->startOfMonth();
-        $end = $month->copy()->endOfMonth();
+        // Browser offset: local = UTC - $tz (UTC-5 → 300).
+        $tz = ViewerTimezone::offset($request);
+
+        $month = $this->parseMonth($request->query('month'), $tz);
+        // Month bounds are built in viewer-local time, then shifted to the
+        // UTC wall time that created_at stores.
+        $startLocal = $month->copy()->startOfMonth();
+        $endLocal = $month->copy()->endOfMonth();
+        $start = $startLocal->copy()->addMinutes($tz);
+        $end = $endLocal->copy()->addMinutes($tz);
 
         $visibleSongIds = Song::visibleTo($request->user())->select('id');
 
@@ -31,7 +42,7 @@ class CalendarController extends Controller
         $dayCounts = SongSubmission::query()
             ->whereIn('song_id', $visibleSongIds)
             ->whereBetween('created_at', [$start, $end])
-            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->selectRaw(ViewerTimezone::localDateSql('created_at', -$tz).' as day, COUNT(*) as total')
             ->groupBy('day')
             ->pluck('total', 'day')
             ->map(fn ($total) => (int) $total)
@@ -43,43 +54,50 @@ class CalendarController extends Controller
         if (is_string($day) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
             $dayStart = Carbon::createFromFormat('Y-m-d', $day)->startOfDay();
 
-            // Only days inside the requested month produce a day page.
-            if (! $dayStart->between($start, $end)) {
+            // Only days inside the requested month produce a day page
+            // (compared viewer-local vs viewer-local).
+            if (! $dayStart->between($startLocal, $endLocal)) {
                 $day = null;
             } else {
                 $dayPage = SongSubmission::query()
-                ->whereIn('song_id', $visibleSongIds)
-                ->join('songs', 'songs.id', '=', 'song_submissions.song_id')
-                ->whereBetween('song_submissions.created_at', [$dayStart, $dayStart->copy()->endOfDay()])
-                ->select([
-                    'song_submissions.id as submission_id',
-                    'songs.song_code',
-                    'songs.track_title',
-                    'song_submissions.created_at',
-                ])
-                ->orderBy('song_submissions.created_at')
-                ->orderBy('song_submissions.id')
-                ->paginate(50)
-                ->withQueryString()
-                ->through(fn ($row) => [
-                    'id' => $row->submission_id,
-                    'song_code' => $row->song_code,
-                    'track_title' => $row->track_title,
-                    'created_at' => Carbon::parse($row->created_at)->toIso8601String(),
-                ]);
+                    ->whereIn('song_id', $visibleSongIds)
+                    ->join('songs', 'songs.id', '=', 'song_submissions.song_id')
+                    ->whereBetween('song_submissions.created_at', [
+                        $dayStart->copy()->addMinutes($tz),
+                        $dayStart->copy()->endOfDay()->addMinutes($tz),
+                    ])
+                    ->select([
+                        'song_submissions.id as submission_id',
+                        'songs.song_code',
+                        'songs.track_title',
+                        'song_submissions.created_at',
+                    ])
+                    ->orderBy('song_submissions.created_at')
+                    ->orderBy('song_submissions.id')
+                    ->paginate(50)
+                    ->withQueryString()
+                    ->through(fn ($row) => [
+                        'id' => $row->submission_id,
+                        'song_code' => $row->song_code,
+                        'track_title' => $row->track_title,
+                        'created_at' => Carbon::parse($row->created_at)->toIso8601String(),
+                    ]);
             }
         }
 
         return Inertia::render('Calendar', [
             'month' => $month->format('Y-m'),
+            // The offset the server actually used — the client compares it
+            // with the browser's and reloads once if the cookie was missing.
+            'tz' => $tz,
             'dayCounts' => $dayCounts,
             'day' => $dayPage !== null ? $day : null,
             'dayPage' => $dayPage,
         ]);
     }
 
-    /** 'YYYY-MM' (validated) or the current month. */
-    private function parseMonth(mixed $value): Carbon
+    /** 'YYYY-MM' (validated) or the viewer's current month. */
+    private function parseMonth(mixed $value, int $tz): Carbon
     {
         if (is_string($value) && preg_match('/^\d{4}-\d{2}$/', $value)) {
             try {
@@ -89,6 +107,8 @@ class CalendarController extends Controller
             }
         }
 
-        return Carbon::now()->startOfMonth();
+        // Viewer-local "now" (UTC minus the offset) decides the month, so
+        // the 1st at 00:30 local doesn't jump to the wrong month.
+        return Carbon::now()->subMinutes($tz)->startOfMonth();
     }
 }

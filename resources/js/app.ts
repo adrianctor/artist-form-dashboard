@@ -1,5 +1,6 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
+import { setViewerTimezoneCookie } from '@/composables/useViewerTimezone';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
@@ -35,6 +36,10 @@ void createInertiaApp({
 
 // This will set light / dark mode on page load...
 initializeTheme();
+
+// Publish the viewer's UTC offset so the server buckets calendar/dashboard
+// dates in the viewer's timezone (see useViewerTimezone).
+setViewerTimezoneCookie();
 
 // This will listen for flash toast data from the server...
 initializeFlashToast();

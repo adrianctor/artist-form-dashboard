@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { useViewerTimezone } from '@/composables/useViewerTimezone';
 import { Button } from '@/components/ui/button';
 import songRoutes from '@/routes/songs';
 
@@ -37,10 +38,15 @@ defineOptions({
 // is aggregated and the selected day is loaded (paginated) on demand.
 const props = defineProps<{
     month: string; // 'YYYY-MM'
+    tz: number; // UTC offset the server grouped the dates with (minutes)
     dayCounts: Record<string, number>;
     day: string | null; // 'YYYY-MM-DD' | null
     dayPage: DayPage | null;
 }>();
+
+// Fresh deep links arrive without the tz_offset cookie (UTC grouping) —
+// write it and reload once so the day buckets match the viewer's calendar.
+useViewerTimezone(props.tz);
 
 const [initialYear, initialMonth] = props.month.split('-').map(Number);
 const viewYear = ref(initialYear);

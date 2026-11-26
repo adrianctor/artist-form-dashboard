@@ -17,7 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        // 'tz_offset' is written by the browser (viewer UTC offset for date
+        // bucketing) — it must stay readable as-is, not encrypted.
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'tz_offset']);
 
         // Spec S5: profile-completion gate (alias 'profile.complete').
         $middleware->alias([

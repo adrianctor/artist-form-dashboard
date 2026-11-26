@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import SubmissionsChart from '@/components/charts/SubmissionsChart.vue';
+import { useViewerTimezone } from '@/composables/useViewerTimezone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import songRoutes from '@/routes/songs';
@@ -17,12 +18,17 @@ interface RecentSong {
     updated_at: string | null;
 }
 
-defineProps<{
+const props = defineProps<{
     stats: DashboardStats;
     recentSongs: RecentSong[];
+    tz: number; // UTC offset the server grouped the dates with (minutes)
     submissionsDaily: Record<string, number>;
     recentSubmissions: RecentSubmission[];
 }>();
+
+// Fresh deep links arrive without the tz_offset cookie (UTC buckets) —
+// write it and reload once so the chart matches the viewer's dates.
+useViewerTimezone(props.tz);
 
 interface RecentSubmission {
     id: number;

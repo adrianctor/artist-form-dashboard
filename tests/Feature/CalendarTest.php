@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Song;
 use App\Models\SongSubmission;
 use App\Models\User;
+use Database\Seeders\RolesAndUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -22,8 +24,8 @@ class CalendarTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RolesAndUsersSeeder::class);
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->seed(RolesAndUsersSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     private function admin(): User
@@ -203,5 +205,113 @@ class CalendarTest extends TestCase
                 ->where('day', null)
                 ->where('dayPage', null)
             );
+    }
+
+    /* ---- Viewer-timezone bucketing (bug: submits landed on the wrong day) ---- */
+
+    public function test_day_counts_use_the_viewer_timezone_not_utc(): void
+    {
+        // A submit at 2026-11-20 01:22 UTC is 2026-11-19 20:22 for a UTC-5
+        // viewer — the reported bug: the calendar loaded it as the 20th.
+        $admin = $this->admin();
+        $song = $this->makeSongFor($admin, 'SONG-TZ000001');
+        SongSubmission::where('song_id', $song->id)->update([
+            'created_at' => '2026-11-20 01:22:00',
+        ]);
+
+        // No cookie (unknown viewer): UTC grouping is unchanged. This request
+        // runs first because withUnencryptedCookie persists for every later
+        // request in the same test.
+        $this->actingAs($admin)
+            ->get('/calendar?month=2026-11')
+            ->assertInertia(fn ($page) => $page
+                ->where('dayCounts.2026-11-20', 1)
+                ->missing('dayCounts.2026-11-19')
+            );
+
+        // Viewer timezone (UTC-5): grouped under the 19th, never the 20th.
+        $this->actingAs($admin)
+            ->withUnencryptedCookie('tz_offset', '300')
+            ->get('/calendar?month=2026-11')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('tz', 300)
+                ->where('dayCounts.2026-11-19', 1)
+                ->missing('dayCounts.2026-11-20')
+            );
+    }
+
+    public function test_day_detail_window_uses_the_viewer_timezone(): void
+    {
+        $admin = $this->admin();
+        $song = $this->makeSongFor($admin, 'SONG-TZ000002');
+        SongSubmission::where('song_id', $song->id)->update([
+            'created_at' => '2026-11-20 01:22:00',
+        ]);
+
+        // The viewer's 19th (local 00:00–23:59 = UTC 05:00 → next 04:59) holds it.
+        $this->actingAs($admin)
+            ->withUnencryptedCookie('tz_offset', '300')
+            ->get('/calendar?month=2026-11&day=2026-11-19')
+            ->assertInertia(fn ($page) => $page
+                ->where('day', '2026-11-19')
+                ->where('dayPage.data.0.song_code', 'SONG-TZ000002')
+            );
+
+        // The viewer's 20th starts at UTC 05:00 on the 20th — not there.
+        $this->actingAs($admin)
+            ->withUnencryptedCookie('tz_offset', '300')
+            ->get('/calendar?month=2026-11&day=2026-11-20')
+            ->assertInertia(fn ($page) => $page
+                ->where('dayPage.data', fn ($data) => count($data) === 0)
+            );
+    }
+
+    public function test_month_bounds_respect_the_viewer_timezone(): void
+    {
+        // 2026-12-01 04:59 UTC is still 2026-11-30 23:59 for a UTC-5 viewer:
+        // it belongs to November in the viewer's calendar, not December.
+        $admin = $this->admin();
+        $song = $this->makeSongFor($admin, 'SONG-TZ000003');
+        SongSubmission::where('song_id', $song->id)->update([
+            'created_at' => '2026-12-01 04:59:00',
+        ]);
+
+        $this->actingAs($admin)
+            ->withUnencryptedCookie('tz_offset', '300')
+            ->get('/calendar?month=2026-11')
+            ->assertInertia(fn ($page) => $page
+                ->where('dayCounts.2026-11-30', 1)
+            );
+
+        $this->actingAs($admin)
+            ->withUnencryptedCookie('tz_offset', '300')
+            ->get('/calendar?month=2026-12')
+            ->assertInertia(fn ($page) => $page
+                ->missing('dayCounts.2026-12-01')
+            );
+    }
+
+    public function test_default_month_is_the_viewers_local_month(): void
+    {
+        // 2026-12-01 02:00 UTC is still 2026-11-30 21:00 for a UTC-5 viewer,
+        // so the fallback month must be November for them, December for UTC.
+        $admin = $this->admin();
+        Carbon::setTestNow(Carbon::parse('2026-12-01 02:00:00'));
+
+        try {
+            // Without a cookie: UTC grouping keeps the historical month.
+            $this->actingAs($admin)
+                ->get('/calendar')
+                ->assertInertia(fn ($page) => $page->where('month', '2026-12'));
+
+            // With the viewer's offset: still November for a UTC-5 viewer.
+            $this->actingAs($admin)
+                ->withUnencryptedCookie('tz_offset', '300')
+                ->get('/calendar')
+                ->assertInertia(fn ($page) => $page->where('month', '2026-11'));
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }
