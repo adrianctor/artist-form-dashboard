@@ -222,6 +222,39 @@ Login: `https://artist.sunsetgathering.com/login` → `label@admin.com` + tu `AD
 5. **Verificación**: usá "Forgot password?" con cualquier usuario → el correo tiene que llegar (revisá Spam). Si cae en spam, revisá SPF/DKIM: hPanel → Emails → dominio → los registros; con DNS en Hostinger se autoconfiguran.
 6. No hay queue ni cron: los correos de Laravel salen **síncronos** en el mismo request.
 
+### Remitente vs. destino (independientes y parametrizables)
+
+Son dos configuraciones distintas; una puede ser de un dominio y la otra de otro:
+
+- **Remitente (From)**: `MAIL_FROM_ADDRESS` / `MAIL_FROM_NAME` + las credenciales SMTP (`MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`).
+- **Destino de los submits**: `MAIL_SUBMIT_TO` (default `info@sunsetgathering.com`). Es lo único que hay que cambiar si montás el mismo sistema en otro proyecto.
+- Los mails de reseteo/contraseña van al correo del usuario que los pide; solo los submits del form usan `MAIL_SUBMIT_TO`. El cc a los artistas y el reply-to al primer artista salen del mailable (dinámicos).
+
+**Ejemplo: enviar desde `dashboard@djcare.world` y que llegue siempre a `info@sunsetgathering.com`:**
+
+```env
+MAIL_HOST=<SMTP del proveedor que tenga el buzón dashboard@djcare.world>
+MAIL_PORT=465
+MAIL_USERNAME="dashboard@djcare.world"
+MAIL_PASSWORD=<contraseña de ese buzón>
+MAIL_ENCRYPTION=ssl
+MAIL_FROM_ADDRESS="dashboard@djcare.world"
+MAIL_FROM_NAME="Sunset Gathering"
+MAIL_SUBMIT_TO="info@sunsetgathering.com"
+```
+
+Dos restricciones:
+
+1. **El From debe ser un buzón (o alias) del proveedor SMTP que use `MAIL_USERNAME`**: Google Workspace solo envía como direcciones de su dominio (o alias verificados); Hostinger solo autentica sus buzones. O sea: si `dashboard@djcare.world` vive en Google → SMTP de Google; si vive en Hostinger → SMTP de Hostinger.
+2. **SPF/DKIM del dominio From** (`djcare.world`) deben autorizar a ese proveedor; con DNS en el mismo proveedor se autoconfiguran, con DNS en otro hay que agregar los registros a mano. Sin eso, los correos caen en spam.
+
+**Hostinger y GSuite con el mismo buzón (`info@sunsetgathering.com`)**: no se pisan y no hay doble entrega.
+
+- **Envío**: la app usa un solo SMTP (el del `.env`) — solo uno envía.
+- **Recepción**: la decide el **MX del DNS de `sunsetgathering.com`**. Si los MX siguen en Hostinger, el buzón de Google no recibe nada aunque exista en el panel; si los MX apuntan a Google, recibe Google. Elegí dónde querés que llegue y dejá los MX ahí.
+
+El envío (dominio From) y la recepción (dominio destino) son dominios distintos, así que usar SMTP de un proveedor no afecta dónde se recibe el correo.
+
 Si usás **Google login**, agregá en Google Console el redirect URI:
 `https://artist.sunsetgathering.com/auth/google/callback` (y `GOOGLE_CLIENT_ID/SECRET` en el `.env`).
 
