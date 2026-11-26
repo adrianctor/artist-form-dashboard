@@ -62,6 +62,7 @@ class CalendarController extends Controller
                 $dayPage = SongSubmission::query()
                     ->whereIn('song_id', $visibleSongIds)
                     ->join('songs', 'songs.id', '=', 'song_submissions.song_id')
+                    ->leftJoin('users', 'users.id', '=', 'song_submissions.created_by')
                     ->whereBetween('song_submissions.created_at', [
                         $dayStart->copy()->addMinutes($tz),
                         $dayStart->copy()->endOfDay()->addMinutes($tz),
@@ -70,18 +71,30 @@ class CalendarController extends Controller
                         'song_submissions.id as submission_id',
                         'songs.song_code',
                         'songs.track_title',
+                        'songs.artist_emails',
+                        'song_submissions.payload',
                         'song_submissions.created_at',
                     ])
+                    ->addSelect('users.name as created_by_name')
                     ->orderBy('song_submissions.created_at')
                     ->orderBy('song_submissions.id')
                     ->paginate(50)
                     ->withQueryString()
-                    ->through(fn ($row) => [
-                        'id' => $row->submission_id,
-                        'song_code' => $row->song_code,
-                        'track_title' => $row->track_title,
-                        'created_at' => Carbon::parse($row->created_at)->toIso8601String(),
-                    ]);
+                    ->through(function ($row) {
+                        $attributes = $row->getAttributes();
+
+                        return [
+                            'id' => $row->submission_id,
+                            'song_code' => $row->song_code,
+                            'track_title' => $row->track_title,
+                            // Enough info before opening the detail: the
+                            // artists (payload rows, falling back to the song
+                            // emails) and who created the submit.
+                            'artists' => implode(', ', $row->artistNames($attributes['artist_emails'] ?? null)),
+                            'created_by' => (string) ($attributes['created_by_name'] ?? ''),
+                            'created_at' => Carbon::parse($row->created_at)->toIso8601String(),
+                        ];
+                    });
             }
         }
 

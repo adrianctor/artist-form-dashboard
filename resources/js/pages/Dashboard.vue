@@ -35,6 +35,7 @@ interface RecentSubmission {
     song_code: string;
     track_title: string;
     created_by: string;
+    artists: string;
     created_at: string | null;
 }
 
@@ -111,12 +112,20 @@ function formatDate(value: string | null): string {
                                 :key="submission.id"
                                 class="flex items-center justify-between gap-3 text-sm"
                             >
-                                <Link
-                                    :href="songRoutes.show.url({ songCode: submission.song_code })"
-                                    class="min-w-0 truncate hover:text-primary"
-                                >
-                                    {{ submission.track_title }}
-                                </Link>
+                                <div class="min-w-0">
+                                    <Link
+                                        :href="songRoutes.show.url({ songCode: submission.song_code })"
+                                        class="block truncate hover:text-primary"
+                                    >
+                                        {{ submission.track_title }}
+                                    </Link>
+                                    <span
+                                        v-if="submission.artists"
+                                        class="block truncate text-xs text-muted-foreground"
+                                    >
+                                        {{ submission.artists }}
+                                    </span>
+                                </div>
                                 <span class="shrink-0 text-xs text-muted-foreground">
                                     {{ submission.created_by }} · {{ formatDate(submission.created_at) }}
                                 </span>

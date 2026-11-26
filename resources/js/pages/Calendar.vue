@@ -10,6 +10,8 @@ type DaySubmission = {
     id: number;
     song_code: string;
     track_title: string;
+    artists: string;
+    created_by: string;
     created_at: string;
 };
 
@@ -109,6 +111,14 @@ const selectedLabel = computed(() =>
           })
         : null,
 );
+
+/** Submit date/time in the viewer's local timezone (medium date + short time). */
+function formatDateTime(value: string): string {
+    return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(new Date(value));
+}
 
 function monthParam(offset: number): string {
     const date = new Date(viewYear.value, viewMonth.value + offset, 1);
@@ -233,9 +243,17 @@ function goToPage(page: number): void {
                         >
                             {{ submission.track_title }}
                         </Link>
-                        <span class="text-xs text-muted-foreground">
+                        <span class="block text-xs text-muted-foreground">
                             Catalogo
                             <span class="font-mono">{{ submission.song_code }}</span>
+                            · {{ formatDateTime(submission.created_at) }}
+                        </span>
+                        <span class="block truncate text-xs text-muted-foreground">
+                            Artists: {{ submission.artists || '—' }}{{
+                                submission.created_by
+                                    ? ` · by ${submission.created_by}`
+                                    : ''
+                            }}
                         </span>
                     </div>
                 </li>

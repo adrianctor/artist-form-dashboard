@@ -314,4 +314,64 @@ class CalendarTest extends TestCase
             Carbon::setTestNow();
         }
     }
+
+    public function test_day_detail_lists_artists_date_and_creator(): void
+    {
+        // The day list must carry enough info BEFORE opening the detail:
+        // the artists, the submit date/time, and who created it.
+        $admin = $this->admin();
+        $song = Song::create([
+            'song_code' => 'SONG-INFO001',
+            'track_title' => 'Info Song',
+            'submission_count' => 1,
+            'user_id' => $admin->id,
+        ]);
+        SongSubmission::create([
+            'song_id' => $song->id,
+            'payload' => [
+                'track_title' => 'Info Song',
+                'artists' => [
+                    ['name' => 'Alpha Artist'],
+                    ['name' => 'Beta Artist'],
+                ],
+            ],
+            'track_title' => 'Info Song',
+            'created_by' => $admin->id,
+        ]);
+
+        $today = now()->toDateString();
+
+        $this->actingAs($admin)
+            ->get('/calendar?day='.$today)
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('dayPage.data.0.artists', 'Alpha Artist, Beta Artist')
+                ->where('dayPage.data.0.created_by', $admin->name)
+                ->where(
+                    'dayPage.data.0.created_at',
+                    fn ($value) => is_string($value)
+                        && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $value) === 1
+                )
+            );
+    }
+
+    public function test_day_detail_falls_back_to_the_song_artist_emails(): void
+    {
+        // API submits may carry no artist rows — the song's denormalized
+        // email list identifies them instead.
+        $admin = $this->admin();
+        $song = $this->makeSongFor($admin, 'SONG-INFO002');
+        Song::query()->where('id', $song->id)->update([
+            'artist_emails' => ',one@example.com,two@example.com,',
+        ]);
+
+        $today = now()->toDateString();
+
+        $this->actingAs($admin)
+            ->get('/calendar?day='.$today)
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('dayPage.data.0.artists', 'one@example.com, two@example.com')
+            );
+    }
 }

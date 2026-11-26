@@ -86,6 +86,63 @@ class DashboardTest extends TestCase
         $this->actingAs($user)->get(route('release-form'))->assertOk();
     }
 
+    public function test_recent_submissions_list_the_artists(): void
+    {
+        // Good info before opening the detail: the latest-submissions list
+        // must show the artists of each submit, not only title + date.
+        $user = User::factory()->create();
+        $song = Song::create([
+            'song_code' => 'SONG-ARTISTS1',
+            'user_id' => $user->id,
+            'track_title' => 'Artists Track',
+            'submission_count' => 1,
+            'artist_emails' => ',fallback@example.com,',
+        ]);
+        SongSubmission::create([
+            'song_id' => $song->id,
+            'track_title' => 'Artists Track',
+            'payload' => [
+                'artists' => [
+                    ['name' => 'Gamma Artist'],
+                    ['name' => 'Delta Artist'],
+                ],
+            ],
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('recentSubmissions.0.artists', 'Gamma Artist, Delta Artist')
+            );
+    }
+
+    public function test_recent_submissions_fall_back_to_artist_emails(): void
+    {
+        $user = User::factory()->create();
+        $song = Song::create([
+            'song_code' => 'SONG-ARTISTS2',
+            'user_id' => $user->id,
+            'track_title' => 'Email Fallback Track',
+            'submission_count' => 1,
+            'artist_emails' => ',only.email@example.com,',
+        ]);
+        SongSubmission::create([
+            'song_id' => $song->id,
+            'track_title' => 'Email Fallback Track',
+            'payload' => [],
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('recentSubmissions.0.artists', 'only.email@example.com')
+            );
+    }
+
     /* ---- Viewer-timezone bucketing (same bug as the calendar) ---- */
 
     public function test_submissions_daily_buckets_use_the_viewer_timezone(): void

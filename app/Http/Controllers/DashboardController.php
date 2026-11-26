@@ -56,13 +56,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array<int, array{id: int, song_code: string, track_title: string, created_by: string, created_at: string|null}>
+     * @return array<int, array{id: int, song_code: string, track_title: string, created_by: string, artists: string, created_at: string|null}>
      */
     private function recentSubmissions(Request $request): array
     {
         return SongSubmission::query()
             ->whereIn('song_id', Song::visibleTo($request->user())->select('id'))
-            ->with(['createdBy', 'song:id,song_code,track_title'])
+            ->with(['createdBy', 'song:id,song_code,track_title,artist_emails'])
             ->latest('id')
             ->limit(10)
             ->get()
@@ -71,6 +71,11 @@ class DashboardController extends Controller
                 'song_code' => $submission->song->song_code,
                 'track_title' => $submission->track_title ?? $submission->song->track_title,
                 'created_by' => $submission->createdBy?->name ?? '—',
+                // Enough info before opening the detail: the artists of the
+                // submit (payload rows, falling back to the song emails).
+                'artists' => implode(', ', $submission->artistNames(
+                    $submission->song->getAttributes()['artist_emails'] ?? null,
+                )),
                 'created_at' => $submission->created_at?->toIso8601String(),
             ])
             ->all();
