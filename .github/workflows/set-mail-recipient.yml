@@ -1,0 +1,125 @@
+name: set-mail-recipient
+
+# One-shot utility: sets MAIL_SUBMIT_TO on the production server's .env.
+# The deploy pipeline never touches .env (rsync excludes it), so this is
+# the sanctioned channel for changing the submit destination without shell
+# access to the host. Manual dispatch only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipient:
+        description: 'Destino de los submits del form (MAIL_SUBMIT_TO)'
+        required: true
+        default: 'info@sunsetgathering.com'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: set-mail-recipient
+
+jobs:
+  set-recipient:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate recipient
+        env:
+          RECIPIENT: ${{ inputs.recipient }}
+        run: |
+          if ! printf '%s' "$RECIPIENT" | grep -Eq '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'; then
+            echo "::error::Destino invalido: $RECIPIENT"
+            exit 1
+          fi
+
+      - name: Check deploy secrets
+        id: secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Secrets de deploy no configurados."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure SSH
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Set MAIL_SUBMIT_TO and verify cached config
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          RECIPIENT: ${{ inputs.recipient }}
+        run: |
+          ssh -p "$DEPLOY_PORT" -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "RECIPIENT='$RECIPIENT' APP_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+          set -e
+          cd "$APP_PATH"
+          test -f .env || { echo "::error::.env no encontrado en $APP_PATH"; exit 1; }
+
+          BACKUP=".env.mailto-$(date +%Y%m%d-%H%M%S)"
+          cp .env "$BACKUP"
+          echo "backup: $BACKUP"
+          echo "before: $(grep '^MAIL_SUBMIT_TO=' .env || echo '(sin MAIL_SUBMIT_TO - regiria el default info@sunsetgathering.com)')"
+
+          if grep -q '^MAIL_SUBMIT_TO=' .env; then
+            sed -i "s|^MAIL_SUBMIT_TO=.*|MAIL_SUBMIT_TO=\"$RECIPIENT\"|" .env
+          else
+            printf '\nMAIL_SUBMIT_TO="%s"\n' "$RECIPIENT" >> .env
+          fi
+
+          echo "after:  $(grep '^MAIL_SUBMIT_TO=' .env)"
+
+          php artisan config:clear >/dev/null
+          php artisan config:cache
+          echo "config cacheada (lo que Laravel realmente usa):"
+          grep -o "'submit_recipient' => '[^']*'" bootstrap/cache/config.php || {
+            echo "::error::No se encontro submit_recipient en la config cacheada"
+            exit 1
+          }
+          REMOTE
+
+      - name: Send test email to the new destination
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh -p "$DEPLOY_PORT" -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "APP_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+          set -e
+          cd "$APP_PATH"
+          php -r '
+          require "vendor/autoload.php";
+          $app = require "bootstrap/app.php";
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          Illuminate\Support\Facades\Mail::raw(
+              "El destino de los submits del Music Release Form ahora es este correo. Este es un correo de prueba del deploy.",
+              function ($m) {
+                  $m->to(config("mail.submit_recipient"))
+                    ->subject("Test - destino de submits del dashboard");
+              }
+          );
+          echo "OK: enviado a ".config("mail.submit_recipient")." desde ".config("mail.from.address").PHP_EOL;
+          ' || echo "::warning::No se pudo enviar el correo de prueba (el cambio de destino si quedo aplicado y cacheado)"
+          REMOTE
